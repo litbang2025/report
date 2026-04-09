@@ -44,41 +44,61 @@ st.markdown("""
         }
         
         .premium-header {
-            padding: 20px 15px !important;
+            padding: 15px 12px !important;
         }
         
         .premium-header h1 {
-            font-size: 1.2rem !important;
+            font-size: 1.1rem !important;
         }
         
         .premium-header p {
-            font-size: 0.7rem !important;
+            font-size: 0.65rem !important;
         }
         
         .saldo-nilai {
-            font-size: 1.5rem !important;
+            font-size: 1.3rem !important;
         }
         
         .info-value {
-            font-size: 1rem !important;
+            font-size: 0.9rem !important;
         }
         
         .progress-label {
-            font-size: 0.7rem !important;
+            font-size: 0.65rem !important;
         }
         
         .score-chip {
-            font-size: 0.6rem !important;
-            padding: 2px 8px !important;
+            font-size: 0.55rem !important;
+            padding: 2px 6px !important;
+        }
+        
+        /* Mobile menu button */
+        .mobile-menu-btn {
+            display: flex !important;
+        }
+    }
+    
+    /* Desktop sidebar tetap normal */
+    @media (min-width: 769px) {
+        .mobile-upload-section {
+            display: none !important;
+        }
+    }
+    
+    /* Mobile upload section - hanya muncul di HP */
+    @media (max-width: 768px) {
+        .mobile-upload-section {
+            display: block !important;
+            margin-bottom: 15px;
         }
     }
     
     /* Premium Header */
     .premium-header {
         background: linear-gradient(135deg, #1e3a5f 0%, #0f2b4d 50%, #1a4a7a 100%);
-        padding: 25px 30px;
+        padding: 20px 25px;
         border-radius: 20px;
-        margin-bottom: 25px;
+        margin-bottom: 20px;
         box-shadow: 0 10px 25px rgba(0,0,0,0.15);
         position: relative;
         overflow: hidden;
@@ -97,17 +117,17 @@ st.markdown("""
     
     .premium-header h1 {
         margin: 0;
-        font-size: 1.6rem;
+        font-size: 1.4rem;
         font-weight: 700;
         color: #ffffff !important;
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 8px;
     }
     
     .premium-header p {
-        margin: 8px 0 0 0;
-        font-size: 0.85rem;
+        margin: 6px 0 0 0;
+        font-size: 0.75rem;
         color: #cbd5e1 !important;
     }
     
@@ -115,7 +135,7 @@ st.markdown("""
     .premium-card {
         background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
         border-radius: 20px;
-        padding: 20px;
+        padding: 18px;
         color: #ffffff !important;
         margin-bottom: 20px;
         box-shadow: 0 8px 20px rgba(37,99,235,0.25);
@@ -124,46 +144,24 @@ st.markdown("""
     }
     
     .saldo-label {
-        font-size: 0.7rem;
+        font-size: 0.65rem;
         text-transform: uppercase;
         letter-spacing: 1px;
         color: #bfdbfe !important;
     }
     
     .saldo-nilai {
-        font-size: 2rem;
+        font-size: 1.8rem;
         font-weight: 800;
-        margin: 8px 0;
+        margin: 6px 0;
         color: #ffffff !important;
-    }
-    
-    /* Info Cards */
-    .info-card {
-        background: #f8fafc;
-        border-radius: 14px;
-        padding: 12px;
-        border-left: 3px solid #2563eb;
-        margin-bottom: 10px;
-    }
-    
-    .info-title {
-        font-size: 0.65rem;
-        color: #64748b !important;
-        text-transform: uppercase;
-    }
-    
-    .info-value {
-        font-size: 1rem;
-        font-weight: 700;
-        color: #0f172a !important;
-        margin-top: 4px;
     }
     
     /* Progress Container */
     .premium-progress {
         background: #f8fafc;
         border-radius: 12px;
-        padding: 12px;
+        padding: 10px;
         margin-bottom: 10px;
         border: 1px solid #e2e8f0;
     }
@@ -172,7 +170,7 @@ st.markdown("""
         display: flex;
         justify-content: space-between;
         margin-bottom: 6px;
-        font-size: 0.75rem;
+        font-size: 0.7rem;
         color: #0f172a !important;
     }
     
@@ -197,9 +195,9 @@ st.markdown("""
     .score-chip {
         display: inline-flex;
         align-items: center;
-        padding: 3px 10px;
+        padding: 2px 8px;
         border-radius: 20px;
-        font-size: 0.65rem;
+        font-size: 0.6rem;
         font-weight: 600;
     }
     
@@ -212,19 +210,19 @@ st.markdown("""
     [data-testid="stMetric"] {
         background: #f8fafc;
         border-radius: 14px;
-        padding: 12px;
+        padding: 10px;
         border: 1px solid #e2e8f0;
     }
     
     [data-testid="stMetricLabel"] {
         color: #64748b !important;
-        font-size: 0.7rem !important;
+        font-size: 0.65rem !important;
     }
     
     [data-testid="stMetricValue"] {
         color: #0f172a !important;
         font-weight: 700 !important;
-        font-size: 1.2rem !important;
+        font-size: 1rem !important;
     }
     
     /* Tabs untuk mobile */
@@ -239,9 +237,9 @@ st.markdown("""
     .stTabs [data-baseweb="tab"] {
         background: transparent;
         border-radius: 25px;
-        padding: 4px 12px;
+        padding: 4px 10px;
         color: #64748b !important;
-        font-size: 0.7rem !important;
+        font-size: 0.65rem !important;
     }
     
     .stTabs [aria-selected="true"] {
@@ -260,7 +258,7 @@ st.markdown("""
     .stSelectbox > div > div > div {
         color: white !important;
         font-weight: 600 !important;
-        font-size: 0.85rem !important;
+        font-size: 0.8rem !important;
     }
     
     /* File uploader */
@@ -278,7 +276,25 @@ st.markdown("""
         border-radius: 12px;
         padding: 8px 16px;
         font-weight: 600;
-        font-size: 0.85rem;
+        font-size: 0.8rem;
+    }
+    
+    /* Mobile upload card */
+    .mobile-upload-card {
+        background: #f8fafc;
+        border-radius: 16px;
+        padding: 15px;
+        margin-bottom: 20px;
+        border: 1px solid #e2e8f0;
+    }
+    
+    .mobile-upload-title {
+        font-weight: 600;
+        color: #0f172a;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
     }
     
     /* Hide Streamlit Branding */
@@ -293,7 +309,7 @@ st.markdown("""
     
     @media (max-width: 768px) {
         [data-testid="stSidebar"] {
-            min-width: 250px !important;
+            min-width: 260px !important;
         }
     }
 </style>
@@ -492,7 +508,6 @@ def create_pdf_report(student_data, name_col, subject_cols, scores, avg_score, m
     return buffer
 
 # ============ DATA SISWA (LENGKAP 28 SISWA) ============
-# Buat DataFrame langsung dari dictionary
 data = {
     "Nama Siswa": [
         "ABDUL HAFIDZ", "ABDULLAH HAFIZ DHIAURRAHMAN", "ABDULLAH ZAIN", "AFNAN FIRDAUS",
@@ -535,7 +550,6 @@ subject_columns = [
     "Seni Budaya", "Siroh"
 ]
 
-# Buat DataFrame
 df_default = pd.DataFrame(data)
 
 # ============ SIDEBAR MENU ============
@@ -544,7 +558,7 @@ with st.sidebar:
     st.markdown("---")
     
     st.markdown("#### 📂 Upload Data")
-    uploaded_file = st.file_uploader("Upload File Excel", type=["xlsx", "xls"], key="file_uploader")
+    uploaded_file_sidebar = st.file_uploader("Upload File Excel", type=["xlsx", "xls"], key="sidebar_uploader")
     
     st.markdown("---")
     
@@ -556,6 +570,27 @@ with st.sidebar:
     st.markdown("---")
     st.caption("📱 EduAnalytics Mobile v3.0")
     st.caption("© 2024 All Rights Reserved")
+
+# ============ MOBILE UPLOAD SECTION (TAMPAK DI HP) ============
+# Ini adalah bagian yang akan tampil di mobile
+st.markdown("""
+<div class="mobile-upload-section">
+    <div class="mobile-upload-card">
+        <div class="mobile-upload-title">
+            📂 <span style="color:#0f172a;">Upload Data Excel</span>
+        </div>
+""", unsafe_allow_html=True)
+
+uploaded_file_mobile = st.file_uploader("Pilih file Excel", type=["xlsx", "xls"], key="mobile_uploader", label_visibility="collapsed")
+
+st.markdown("""
+    </div>
+</div>
+""", unsafe_allow_html=True)
+
+# ============ DETEKSI FILE UPLOAD ============
+# Prioritaskan upload dari mobile dulu, lalu sidebar
+uploaded_file = uploaded_file_mobile if uploaded_file_mobile is not None else uploaded_file_sidebar
 
 # ============ LOAD DATA ============
 if uploaded_file is not None and use_default == "Upload File Excel":
