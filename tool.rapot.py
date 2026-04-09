@@ -111,25 +111,6 @@ st.markdown("""
         color: #cbd5e1 !important;
     }
     
-    /* Mobile Menu Button */
-    .mobile-menu-btn {
-        position: fixed;
-        bottom: 20px;
-        right: 20px;
-        background: linear-gradient(135deg, #2563eb, #1d4ed8);
-        color: white;
-        width: 50px;
-        height: 50px;
-        border-radius: 25px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-        cursor: pointer;
-        z-index: 999;
-        font-size: 24px;
-    }
-    
     /* Saldo Card */
     .premium-card {
         background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
@@ -268,7 +249,7 @@ st.markdown("""
         color: #2563eb !important;
     }
     
-    /* Select Box untuk mobile */
+    /* Select Box */
     .stSelectbox > div > div {
         background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
         border: none !important;
@@ -282,7 +263,7 @@ st.markdown("""
         font-size: 0.85rem !important;
     }
     
-    /* File uploader untuk mobile */
+    /* File uploader */
     .stFileUploader > div > div {
         background: #f8fafc !important;
         border: 1px dashed #2563eb !important;
@@ -305,7 +286,6 @@ st.markdown("""
     footer {visibility: hidden;}
     header {visibility: hidden;}
     
-    /* Sidebar untuk mobile - hidden by default */
     [data-testid="stSidebar"] {
         background: #f8fafc;
         border-right: 1px solid #e2e8f0;
@@ -512,22 +492,40 @@ def create_pdf_report(student_data, name_col, subject_cols, scores, avg_score, m
     return buffer
 
 # ============ DATA SISWA (LENGKAP 28 SISWA) ============
-student_names = [
-    "ABDUL HAFIDZ", "ABDULLAH HAFIZ DHIAURRAHMAN", "ABDULLAH ZAIN", "AFNAN FIRDAUS",
-    "AHMADUN AL HAQQI", "ALDRICO PASHA FATEEH NUGROHO", "ALFATIH ARSHAKA AKBAR", "BARRA KAUTSAR FIRDAUS",
-    "EMIER ARJUNA AL FATIH", "FIKRI ALVARO TAJUZZAMAN", "HAFIDZ NAUFAL ALFATHAN", "HAMMAM AZZUHRI PERMANA",
-    "IMAM MAHDI", "KHALID FATIH ALBASTIAH", "MUHAMMAD FATHAN HAISYAM", "MUHAMMAD KHALEEV AR RAYYAN KURNIAWAN",
-    "MUHAMMAD MIKEL ALASTA EMIL", "MUHAMMAD NABIL HAMZAH AL-FATTAH", "MUHAMMAD ZHAFIF MUSLIM", "NABIL ALGHAZI SETIAWAN",
-    "RAFFI ADLI SHIDQI", "RAYHAN RIZAN AL FATIH", "SA'AD ABDULLAH THOBARONY", "SABIQ SHIRATULLAH WIJAYA",
-    "TAJUNA MAZRA IBRAHIM", "TSANII MUHAMMAD KHALIFIDZIKRI", "YAHYA AMRI ABDILLAH", "YUSUF AKMAL RIFAI"
-]
-
-nisn_list = [
-    3143539590, 3150333935, 3161328188, 3157710996, 3158913526, 3157089416, 3150492070, 3154615260,
-    3161409449, 3162906560, 3159758093, 3156456673, 3164882755, 3169680431, 3152014029, 3157612630,
-    3149765954, 3159261937, 3158866436, 158718478, 133692902, 159673218, 3168078382, 158633055,
-    136408533, 3153379248, 3158669297, 3161542999
-]
+# Buat DataFrame langsung dari dictionary
+data = {
+    "Nama Siswa": [
+        "ABDUL HAFIDZ", "ABDULLAH HAFIZ DHIAURRAHMAN", "ABDULLAH ZAIN", "AFNAN FIRDAUS",
+        "AHMADUN AL HAQQI", "ALDRICO PASHA FATEEH NUGROHO", "ALFATIH ARSHAKA AKBAR", "BARRA KAUTSAR FIRDAUS",
+        "EMIER ARJUNA AL FATIH", "FIKRI ALVARO TAJUZZAMAN", "HAFIDZ NAUFAL ALFATHAN", "HAMMAM AZZUHRI PERMANA",
+        "IMAM MAHDI", "KHALID FATIH ALBASTIAH", "MUHAMMAD FATHAN HAISYAM", "MUHAMMAD KHALEEV AR RAYYAN KURNIAWAN",
+        "MUHAMMAD MIKEL ALASTA EMIL", "MUHAMMAD NABIL HAMZAH AL-FATTAH", "MUHAMMAD ZHAFIF MUSLIM", "NABIL ALGHAZI SETIAWAN",
+        "RAFFI ADLI SHIDQI", "RAYHAN RIZAN AL FATIH", "SA'AD ABDULLAH THOBARONY", "SABIQ SHIRATULLAH WIJAYA",
+        "TAJUNA MAZRA IBRAHIM", "TSANII MUHAMMAD KHALIFIDZIKRI", "YAHYA AMRI ABDILLAH", "YUSUF AKMAL RIFAI"
+    ],
+    "NISN": [
+        3143539590, 3150333935, 3161328188, 3157710996, 3158913526, 3157089416, 3150492070, 3154615260,
+        3161409449, 3162906560, 3159758093, 3156456673, 3164882755, 3169680431, 3152014029, 3157612630,
+        3149765954, 3159261937, 3158866436, 158718478, 133692902, 159673218, 3168078382, 158633055,
+        136408533, 3153379248, 3158669297, 3161542999
+    ],
+    "Adab dan Akhlak": [95,94,94,96,92,99,99,93,93,92,96,97,96,95,92,100,97,98,97,96,99,95,85,99,98,98,88,98],
+    "Al-Qur'an": [91,97,96,98,93,96,94,97,92,92,97,91,91,93,98,97,91,90,99,92,95,99,90,96,95,95,92,91],
+    "Aqidah": [76,76,90,93,86,88,88,79,77,80,86,79,94,94,86,93,82,77,99,80,88,89,62,95,97,95,75,92],
+    "Bahasa Arab": [88,91,95,98,94,99,94,96,85,88,91,96,99,95,99,100,92,86,100,92,100,98,84,96,96,95,86,93],
+    "Bahasa Indonesia": [80,80,80,83,81,84,89,87,83,80,83,87,91,84,82,94,87,80,93,80,91,85,80,90,89,86,80,81],
+    "Bahasa Inggris": [87,98,94,95,95,99,98,93,97,98,97,100,96,98,96,97,96,87,99,92,96,99,86,98,98,98,89,97],
+    "Fiqih": [93,95,96,100,91,98,98,98,91,92,95,96,91,96,96,99,95,92,100,93,99,98,92,99,100,96,89,92],
+    "Ilmu Pengetahuan Alam dan Sosial": [68,79,92,90,72,89,92,94,92,72,91,89,94,90,88,96,89,82,98,84,88,87,75,96,96,94,73,85],
+    "Kosa Kata Bahasa Arab": [87,97,97,100,98,100,97,97,93,96,97,94,96,96,94,99,94,84,100,95,97,99,59,100,100,97,92,98],
+    "Matematika": [65,67,90,85,86,82,92,80,78,76,88,85,80,87,78,98,73,67,97,88,75,87,88,88,97,85,70,80],
+    "Pendidikan Jasmani Olahraga dan Kesehatan": [95,93,96,93,94,95,94,96,93,93,95,94,96,95,96,95,94,95,96,95,95,95,93,94,95,97,94,94],
+    "Pendidikan Lingkungan dan Budaya Jakarta": [80,85,87,91,86,97,93,92,95,78,92,96,93,91,91,96,87,88,99,85,95,94,76,95,97,92,79,96],
+    "Pendidikan Pancasila": [79,83,84,85,84,87,94,84,89,84,90,86,82,89,89,96,92,87,94,83,91,90,84,93,95,94,87,92],
+    "Praktek Ibadah": [88,91,95,98,94,99,94,96,85,88,91,98,99,95,99,100,92,86,100,92,100,98,84,96,96,95,86,93],
+    "Seni Budaya": [93,93,96,98,93,93,96,93,94,96,96,94,96,93,97,98,95,93,97,93,95,98,93,94,96,93,93,95],
+    "Siroh": [91,87,94,99,94,100,96,100,90,91,96,85,90,93,99,99,93,85,100,96,99,95,84,100,100,98,84,94]
+}
 
 subject_columns = [
     "Adab dan Akhlak", "Al-Qur'an", "Aqidah", "Bahasa Arab", "Bahasa Indonesia",
@@ -537,57 +535,19 @@ subject_columns = [
     "Seni Budaya", "Siroh"
 ]
 
-# Data nilai lengkap
-scores_data = [
-    [95,91,76,88,80,87,93,68,87,65,95,80,79,88,93,91],
-    [94,97,76,91,80,98,95,79,97,67,93,85,83,91,93,87],
-    [94,96,90,95,80,94,96,92,97,90,96,87,84,95,96,94],
-    [96,98,93,98,83,95,100,90,100,85,93,91,85,98,98,99],
-    [92,93,86,94,81,95,91,72,98,86,94,86,84,94,93,94],
-    [99,96,88,99,84,99,98,89,100,82,95,97,87,99,93,100],
-    [99,94,88,94,89,98,98,92,97,92,94,93,94,94,96,96],
-    [93,97,79,96,87,93,98,94,97,80,96,92,84,96,93,100],
-    [93,92,77,85,83,97,91,92,93,78,93,95,89,85,94,90],
-    [92,92,80,88,80,98,92,72,96,76,93,78,84,88,96,91],
-    [96,97,86,91,83,97,95,91,97,88,95,92,90,91,96,96],
-    [97,91,79,96,87,100,96,89,94,85,94,96,86,98,94,85],
-    [96,91,94,99,91,96,91,94,96,80,96,93,82,99,96,90],
-    [95,93,94,95,84,98,96,90,96,87,95,91,89,95,93,93],
-    [92,98,86,99,82,96,96,88,94,78,96,91,89,99,97,99],
-    [100,97,93,100,94,97,99,96,99,98,95,96,96,100,98,99],
-    [97,91,82,92,87,96,95,89,94,73,94,87,92,92,95,93],
-    [98,90,77,86,80,87,92,82,84,67,95,88,87,86,93,85],
-    [97,99,99,100,93,99,100,98,100,97,96,99,94,100,97,100],
-    [96,92,80,92,80,92,93,84,95,88,95,85,83,92,93,96],
-    [99,95,88,100,91,96,99,88,97,75,95,95,91,100,95,99],
-    [95,99,89,98,85,99,98,87,99,87,95,94,90,98,98,95],
-    [85,90,62,84,80,86,92,75,59,88,93,76,84,84,93,84],
-    [99,96,95,96,90,98,99,96,100,88,94,95,93,96,94,100],
-    [98,95,97,96,89,98,100,96,100,97,95,97,95,96,96,100],
-    [98,95,95,95,86,98,96,94,97,85,97,92,94,95,93,98],
-    [88,92,75,86,80,89,89,73,92,70,94,79,87,86,93,84],
-    [98,91,92,93,81,97,92,85,98,80,94,96,92,93,95,94]
-]
-
 # Buat DataFrame
-data_dict = {"Nama Siswa": student_names, "NISN": nisn_list}
-for i, subject in enumerate(subject_columns):
-    data_dict[subject] = [scores[j][i] for j in range(len(scores_data))]
+df_default = pd.DataFrame(data)
 
-df_default = pd.DataFrame(data_dict)
-
-# ============ SIDEBAR MENU (Mobile Friendly) ============
+# ============ SIDEBAR MENU ============
 with st.sidebar:
     st.markdown("### 👨‍🎓 Menu")
     st.markdown("---")
     
-    # File uploader
     st.markdown("#### 📂 Upload Data")
     uploaded_file = st.file_uploader("Upload File Excel", type=["xlsx", "xls"], key="file_uploader")
     
     st.markdown("---")
     
-    # Data source selection
     st.markdown("#### 📊 Sumber Data")
     use_default = st.radio("Pilih Sumber Data:", ["Data Contoh (28 Siswa)", "Upload File Excel"], index=0)
     
@@ -611,19 +571,16 @@ if uploaded_file is not None and use_default == "Upload File Excel":
             if col not in [name_col, 'NISN'] and pd.api.types.is_numeric_dtype(df[col]):
                 subject_cols.append(col)
         st.success("✅ Data berhasil dimuat!")
-        data_source = "upload"
     except Exception as e:
         st.error(f"Error: {e}")
         st.info("Menggunakan data contoh...")
         df = df_default.copy()
         name_col = 'Nama Siswa'
         subject_cols = subject_columns
-        data_source = "default"
 else:
     df = df_default.copy()
     name_col = 'Nama Siswa'
     subject_cols = subject_columns
-    data_source = "default"
     if use_default == "Data Contoh (28 Siswa)":
         st.info("📚 Menggunakan data contoh (28 siswa)")
 
@@ -642,7 +599,7 @@ if df is not None and len(subject_cols) > 0:
     
     KKM = 80
     
-    # Student Selection - Nama Siswa TAMPIL PUTIH
+    # Student Selection
     st.markdown("### 🎓 Pilih Siswa")
     selected_student = st.selectbox("", df[name_col].unique(), label_visibility="collapsed")
     
@@ -710,7 +667,6 @@ if df is not None and len(subject_cols) > 0:
         st.markdown("### ✅ TOP 5 KEKUATAN")
         for subject, score in strengths:
             grade, chip, _ = get_grade_info(score, KKM)
-            status = "✓ Lulus" if score >= KKM else "✗ Perbaikan"
             st.markdown(f"""
             <div class="premium-progress">
                 <div class="progress-label">
@@ -727,7 +683,6 @@ if df is not None and len(subject_cols) > 0:
         st.markdown("### ⚠️ TOP 5 KELEMAHAN")
         for subject, score in weaknesses:
             grade, chip, _ = get_grade_info(score, KKM)
-            status = "✓ Lulus" if score >= KKM else "✗ Perbaikan"
             bar_color = "linear-gradient(90deg, #ef4444, #dc2626)" if score < KKM else "linear-gradient(90deg, #f59e0b, #d97706)"
             st.markdown(f"""
             <div class="premium-progress">
