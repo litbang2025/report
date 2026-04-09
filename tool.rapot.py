@@ -20,7 +20,7 @@ st.set_page_config(
     page_icon="📊"
 )
 
-# ============ CUSTOM CSS - HIGH CONTRAST ============
+# ============ CUSTOM CSS - RESPONSIVE MOBILE ============
 st.markdown("""
 <style>
     /* Main container */
@@ -33,16 +33,52 @@ st.markdown("""
     }
     
     .block-container {
-        padding: 1rem 2rem 2rem 2rem !important;
+        padding: 1rem 1rem 2rem 1rem !important;
         background-color: #ffffff !important;
     }
     
-    /* Premium Header dengan Gradien */
+    /* Responsive untuk mobile */
+    @media (max-width: 768px) {
+        .block-container {
+            padding: 0.8rem 0.8rem 1.5rem 0.8rem !important;
+        }
+        
+        .premium-header {
+            padding: 20px 15px !important;
+        }
+        
+        .premium-header h1 {
+            font-size: 1.2rem !important;
+        }
+        
+        .premium-header p {
+            font-size: 0.7rem !important;
+        }
+        
+        .saldo-nilai {
+            font-size: 1.5rem !important;
+        }
+        
+        .info-value {
+            font-size: 1rem !important;
+        }
+        
+        .progress-label {
+            font-size: 0.7rem !important;
+        }
+        
+        .score-chip {
+            font-size: 0.6rem !important;
+            padding: 2px 8px !important;
+        }
+    }
+    
+    /* Premium Header */
     .premium-header {
         background: linear-gradient(135deg, #1e3a5f 0%, #0f2b4d 50%, #1a4a7a 100%);
-        padding: 30px 35px;
+        padding: 25px 30px;
         border-radius: 20px;
-        margin-bottom: 30px;
+        margin-bottom: 25px;
         box-shadow: 0 10px 25px rgba(0,0,0,0.15);
         position: relative;
         overflow: hidden;
@@ -59,185 +95,103 @@ st.markdown("""
         border-radius: 50%;
     }
     
-    .premium-header::after {
-        content: '';
-        position: absolute;
-        bottom: -30%;
-        left: -5%;
-        width: 150px;
-        height: 150px;
-        background: rgba(255,255,255,0.03);
-        border-radius: 50%;
-    }
-    
     .premium-header h1 {
         margin: 0;
-        font-size: 1.8rem;
+        font-size: 1.6rem;
         font-weight: 700;
         color: #ffffff !important;
         display: flex;
         align-items: center;
-        gap: 12px;
+        gap: 10px;
     }
     
     .premium-header p {
-        margin: 10px 0 0 0;
-        font-size: 0.9rem;
+        margin: 8px 0 0 0;
+        font-size: 0.85rem;
         color: #cbd5e1 !important;
     }
     
-    /* Sub Header */
-    .sub-header {
-        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-        padding: 15px 20px;
-        border-radius: 16px;
-        margin-bottom: 25px;
-        border: 1px solid #e2e8f0;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-wrap: wrap;
-    }
-    
-    .sub-header-title {
-        font-size: 1rem;
-        font-weight: 600;
-        color: #0f172a;
-    }
-    
-    .sub-header-badge {
-        background: #2563eb;
+    /* Mobile Menu Button */
+    .mobile-menu-btn {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background: linear-gradient(135deg, #2563eb, #1d4ed8);
         color: white;
-        padding: 5px 15px;
-        border-radius: 30px;
-        font-size: 0.8rem;
-        font-weight: 500;
-    }
-    
-    /* Select Box Styling - Nama Siswa Putih */
-    .stSelectbox label {
-        color: #0f172a !important;
-        font-weight: 600 !important;
-    }
-    
-    .stSelectbox > div > div {
-        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
-        border: none !important;
-        border-radius: 40px !important;
-        padding: 5px 15px !important;
-    }
-    
-    .stSelectbox > div > div > div {
-        color: white !important;
-        font-weight: 600 !important;
-        font-size: 1rem !important;
-    }
-    
-    .stSelectbox > div > div > div:hover {
-        color: white !important;
-    }
-    
-    /* Dropdown menu items */
-    div[data-baseweb="popover"] ul {
-        background: white !important;
-        border-radius: 12px !important;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.1) !important;
-    }
-    
-    div[data-baseweb="popover"] li {
-        color: #0f172a !important;
-        font-weight: 500 !important;
-    }
-    
-    div[data-baseweb="popover"] li:hover {
-        background: #dbeafe !important;
-        color: #1e40af !important;
+        width: 50px;
+        height: 50px;
+        border-radius: 25px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        cursor: pointer;
+        z-index: 999;
+        font-size: 24px;
     }
     
     /* Saldo Card */
     .premium-card {
         background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-        border-radius: 24px;
-        padding: 25px;
+        border-radius: 20px;
+        padding: 20px;
         color: #ffffff !important;
-        margin-bottom: 25px;
+        margin-bottom: 20px;
         box-shadow: 0 8px 20px rgba(37,99,235,0.25);
         position: relative;
         overflow: hidden;
     }
     
-    .premium-card::before {
-        content: '📊';
-        position: absolute;
-        bottom: 10px;
-        right: 20px;
-        font-size: 4rem;
-        opacity: 0.1;
-    }
-    
     .saldo-label {
-        font-size: 0.75rem;
+        font-size: 0.7rem;
         text-transform: uppercase;
-        letter-spacing: 1.5px;
+        letter-spacing: 1px;
         color: #bfdbfe !important;
     }
     
     .saldo-nilai {
-        font-size: 2.5rem;
+        font-size: 2rem;
         font-weight: 800;
-        margin: 10px 0;
+        margin: 8px 0;
         color: #ffffff !important;
     }
     
     /* Info Cards */
     .info-card {
         background: #f8fafc;
-        border-radius: 16px;
-        padding: 16px;
-        border-left: 4px solid #2563eb;
-        margin-bottom: 12px;
-        transition: all 0.3s ease;
-    }
-    
-    .info-card:hover {
-        transform: translateX(5px);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        border-radius: 14px;
+        padding: 12px;
+        border-left: 3px solid #2563eb;
+        margin-bottom: 10px;
     }
     
     .info-title {
-        font-size: 0.7rem;
+        font-size: 0.65rem;
         color: #64748b !important;
         text-transform: uppercase;
-        letter-spacing: 1px;
     }
     
     .info-value {
-        font-size: 1.2rem;
+        font-size: 1rem;
         font-weight: 700;
         color: #0f172a !important;
-        margin-top: 5px;
+        margin-top: 4px;
     }
     
     /* Progress Container */
     .premium-progress {
         background: #f8fafc;
         border-radius: 12px;
-        padding: 14px;
-        margin-bottom: 12px;
+        padding: 12px;
+        margin-bottom: 10px;
         border: 1px solid #e2e8f0;
-        transition: all 0.2s ease;
-    }
-    
-    .premium-progress:hover {
-        background: #f1f5f9;
-        border-color: #2563eb;
     }
     
     .progress-label {
         display: flex;
         justify-content: space-between;
-        margin-bottom: 8px;
-        font-size: 0.85rem;
+        margin-bottom: 6px;
+        font-size: 0.75rem;
         color: #0f172a !important;
     }
     
@@ -248,7 +202,7 @@ st.markdown("""
     .progress-bar-bg {
         background: #e2e8f0;
         border-radius: 10px;
-        height: 8px;
+        height: 6px;
         overflow: hidden;
     }
     
@@ -262,9 +216,9 @@ st.markdown("""
     .score-chip {
         display: inline-flex;
         align-items: center;
-        padding: 4px 12px;
+        padding: 3px 10px;
         border-radius: 20px;
-        font-size: 0.7rem;
+        font-size: 0.65rem;
         font-weight: 600;
     }
     
@@ -276,65 +230,63 @@ st.markdown("""
     /* Metric styling */
     [data-testid="stMetric"] {
         background: #f8fafc;
-        border-radius: 16px;
-        padding: 15px;
+        border-radius: 14px;
+        padding: 12px;
         border: 1px solid #e2e8f0;
-        transition: all 0.3s ease;
-    }
-    
-    [data-testid="stMetric"]:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
     }
     
     [data-testid="stMetricLabel"] {
         color: #64748b !important;
-        font-weight: 500 !important;
+        font-size: 0.7rem !important;
     }
     
     [data-testid="stMetricValue"] {
         color: #0f172a !important;
         font-weight: 700 !important;
-        font-size: 1.5rem !important;
+        font-size: 1.2rem !important;
     }
     
-    /* Tabs */
+    /* Tabs untuk mobile */
     .stTabs [data-baseweb="tab-list"] {
-        gap: 8px;
+        gap: 4px;
         background: #f1f5f9;
-        padding: 6px;
-        border-radius: 40px;
+        padding: 4px;
+        border-radius: 30px;
+        flex-wrap: wrap;
     }
     
     .stTabs [data-baseweb="tab"] {
         background: transparent;
-        border-radius: 32px;
-        padding: 6px 20px;
+        border-radius: 25px;
+        padding: 4px 12px;
         color: #64748b !important;
-        font-weight: 500 !important;
+        font-size: 0.7rem !important;
     }
     
     .stTabs [aria-selected="true"] {
         background: #ffffff !important;
         color: #2563eb !important;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
     }
     
-    /* Headers */
-    h1, h2, h3, h4, h5, h6 {
-        color: #0f172a !important;
+    /* Select Box untuk mobile */
+    .stSelectbox > div > div {
+        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
+        border: none !important;
+        border-radius: 40px !important;
+        padding: 5px 12px !important;
+    }
+    
+    .stSelectbox > div > div > div {
+        color: white !important;
         font-weight: 600 !important;
+        font-size: 0.85rem !important;
     }
     
-    /* Text */
-    p, span, div, label {
-        color: #1e293b !important;
-    }
-    
-    /* Sidebar */
-    [data-testid="stSidebar"] {
-        background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
-        border-right: 1px solid #e2e8f0;
+    /* File uploader untuk mobile */
+    .stFileUploader > div > div {
+        background: #f8fafc !important;
+        border: 1px dashed #2563eb !important;
+        border-radius: 12px !important;
     }
     
     /* Button */
@@ -343,19 +295,9 @@ st.markdown("""
         color: white !important;
         border: none;
         border-radius: 12px;
-        padding: 10px 20px;
+        padding: 8px 16px;
         font-weight: 600;
-        transition: all 0.3s ease;
-    }
-    
-    .stButton button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(37,99,235,0.3);
-    }
-    
-    /* Success/Warning/Info */
-    .stAlert {
-        border-radius: 12px;
+        font-size: 0.85rem;
     }
     
     /* Hide Streamlit Branding */
@@ -363,13 +305,15 @@ st.markdown("""
     footer {visibility: hidden;}
     header {visibility: hidden;}
     
-    /* Responsive */
+    /* Sidebar untuk mobile - hidden by default */
+    [data-testid="stSidebar"] {
+        background: #f8fafc;
+        border-right: 1px solid #e2e8f0;
+    }
+    
     @media (max-width: 768px) {
-        .premium-header h1 {
-            font-size: 1.3rem;
-        }
-        .saldo-nilai {
-            font-size: 1.8rem;
+        [data-testid="stSidebar"] {
+            min-width: 250px !important;
         }
     }
 </style>
@@ -379,9 +323,9 @@ st.markdown("""
 st.markdown("""
 <div class="premium-header">
     <h1>
-        <span>🎓</span> EduAnalytics Pro
+        <span>🎓</span> Analisis Kekuatan & Kelemahan Siswa
     </h1>
-    <p>Platform Analisis Kekuatan & Kelemahan Akademik Siswa | Real-time Monitoring | Rekomendasi Belajar</p>
+    <p>Platform Analisis Akademik | Identifikasi Potensi | Rekomendasi Belajar</p>
 </div>
 """, unsafe_allow_html=True)
 
@@ -441,18 +385,18 @@ def create_radar_chart(scores, subjects, student_name, kkm=80):
                 visible=True, 
                 range=[0, 100], 
                 gridcolor='#cbd5e1',
-                tickfont=dict(color='#0f172a', size=10)
+                tickfont=dict(color='#0f172a', size=8)
             ),
             angularaxis=dict(
-                tickfont=dict(color='#0f172a', size=9),
+                tickfont=dict(color='#0f172a', size=7),
                 gridcolor='#e2e8f0'
             )
         ),
         showlegend=True,
-        height=500,
+        height=400,
         title=dict(
             text=f"Radar Chart - {student_name}", 
-            font=dict(color='#0f172a', size=16, weight='bold')
+            font=dict(color='#0f172a', size=14, weight='bold')
         ),
         template='plotly_white',
         paper_bgcolor='white',
@@ -465,13 +409,13 @@ def create_gauge_chart(value, title, color="#2563eb", kkm=80):
     fig = go.Figure(go.Indicator(
         mode="gauge+number",
         value=value,
-        title={'text': title, 'font': {'size': 14, 'color': '#0f172a'}},
-        number={'font': {'color': '#0f172a', 'size': 36, 'weight': 'bold'}},
+        title={'text': title, 'font': {'size': 12, 'color': '#0f172a'}},
+        number={'font': {'color': '#0f172a', 'size': 28, 'weight': 'bold'}},
         gauge={
-            'axis': {'range': [0, 100], 'tickwidth': 1, 'tickcolor': '#64748b'},
+            'axis': {'range': [0, 100], 'tickwidth': 1, 'tickcolor': '#64748b', 'tickfont': {'size': 8}},
             'bar': {'color': color},
             'bgcolor': 'white',
-            'borderwidth': 2,
+            'borderwidth': 1,
             'bordercolor': '#e2e8f0',
             'steps': [
                 {'range': [0, 60], 'color': '#fee2e2'},
@@ -480,17 +424,16 @@ def create_gauge_chart(value, title, color="#2563eb", kkm=80):
                 {'range': [90, 100], 'color': '#bbf7d0'}
             ],
             'threshold': {
-                'line': {'color': "#ef4444", 'width': 4},
+                'line': {'color': "#ef4444", 'width': 3},
                 'thickness': 0.75,
                 'value': kkm
             }
         }
     ))
     fig.update_layout(
-        height=300, 
-        margin=dict(l=30, r=30, t=60, b=30), 
-        paper_bgcolor='white',
-        font=dict(color='#0f172a')
+        height=250, 
+        margin=dict(l=20, r=20, t=40, b=20), 
+        paper_bgcolor='white'
     )
     return fig
 
@@ -500,8 +443,8 @@ def create_pdf_report(student_data, name_col, subject_cols, scores, avg_score, m
     styles = getSampleStyleSheet()
     story = []
     
-    title_style = ParagraphStyle('CustomTitle', parent=styles['Heading1'], fontSize=18, spaceAfter=20, textColor=colors.HexColor('#0f172a'), alignment=1)
-    header_style = ParagraphStyle('Header', parent=styles['Heading2'], fontSize=14, spaceAfter=10, textColor=colors.HexColor('#1e293b'))
+    title_style = ParagraphStyle('CustomTitle', parent=styles['Heading1'], fontSize=16, spaceAfter=20, textColor=colors.HexColor('#0f172a'), alignment=1)
+    header_style = ParagraphStyle('Header', parent=styles['Heading2'], fontSize=12, spaceAfter=10, textColor=colors.HexColor('#1e293b'))
     
     story.append(Paragraph("LAPORAN ANALISIS AKADEMIK SISWA", title_style))
     story.append(Spacer(1, 0.3*inch))
@@ -568,28 +511,23 @@ def create_pdf_report(student_data, name_col, subject_cols, scores, avg_score, m
     buffer.seek(0)
     return buffer
 
-# ============ DATA ============
-KKM = 80
+# ============ DATA SISWA (LENGKAP 28 SISWA) ============
+student_names = [
+    "ABDUL HAFIDZ", "ABDULLAH HAFIZ DHIAURRAHMAN", "ABDULLAH ZAIN", "AFNAN FIRDAUS",
+    "AHMADUN AL HAQQI", "ALDRICO PASHA FATEEH NUGROHO", "ALFATIH ARSHAKA AKBAR", "BARRA KAUTSAR FIRDAUS",
+    "EMIER ARJUNA AL FATIH", "FIKRI ALVARO TAJUZZAMAN", "HAFIDZ NAUFAL ALFATHAN", "HAMMAM AZZUHRI PERMANA",
+    "IMAM MAHDI", "KHALID FATIH ALBASTIAH", "MUHAMMAD FATHAN HAISYAM", "MUHAMMAD KHALEEV AR RAYYAN KURNIAWAN",
+    "MUHAMMAD MIKEL ALASTA EMIL", "MUHAMMAD NABIL HAMZAH AL-FATTAH", "MUHAMMAD ZHAFIF MUSLIM", "NABIL ALGHAZI SETIAWAN",
+    "RAFFI ADLI SHIDQI", "RAYHAN RIZAN AL FATIH", "SA'AD ABDULLAH THOBARONY", "SABIQ SHIRATULLAH WIJAYA",
+    "TAJUNA MAZRA IBRAHIM", "TSANII MUHAMMAD KHALIFIDZIKRI", "YAHYA AMRI ABDILLAH", "YUSUF AKMAL RIFAI"
+]
 
-default_data = {
-    "NISN": [3143539590, 3150333935, 3161328188, 3157710996, 3158913526, 3157089416, 3150492070, 3154615260, 3161409449, 3162906560, 3159758093, 3156456673, 3164882755, 3169680431, 3152014029, 3157612630, 3149765954, 3159261937, 3158866436, 158718478, 133692902, 159673218, 3168078382, 158633055, 136408533, 3153379248, 3158669297, 3161542999],
-    "Adab dan Akhlak": [95,94,94,96,92,99,99,93,93,92,96,97,96,95,92,100,97,98,97,96,99,95,85,99,98,98,88,98],
-    "Al-Qur'an": [91,97,96,98,93,96,94,97,92,92,97,91,91,93,98,97,91,90,99,92,95,99,90,96,95,95,92,91],
-    "Aqidah": [76,76,90,93,86,88,88,79,77,80,86,79,94,94,86,93,82,77,99,80,88,89,62,95,97,95,75,92],
-    "Bahasa Arab": [88,91,95,98,94,99,94,96,85,88,91,96,99,95,99,100,92,86,100,92,100,98,84,96,96,95,86,93],
-    "Bahasa Indonesia": [80,80,80,83,81,84,89,87,83,80,83,87,91,84,82,94,87,80,93,80,91,85,80,90,89,86,80,81],
-    "Bahasa Inggris": [87,98,94,95,95,99,98,93,97,98,97,100,96,98,96,97,96,87,99,92,96,99,86,98,98,98,89,97],
-    "Fiqih": [93,95,96,100,91,98,98,98,91,92,95,96,91,96,96,99,95,92,100,93,99,98,92,99,100,96,89,92],
-    "Ilmu Pengetahuan Alam dan Sosial": [68,79,92,90,72,89,92,94,92,72,91,89,94,90,88,96,89,82,98,84,88,87,75,96,96,94,73,85],
-    "Kosa Kata Bahasa Arab": [87,97,97,100,98,100,97,97,93,96,97,94,96,96,94,99,94,84,100,95,97,99,59,100,100,97,92,98],
-    "Matematika": [65,67,90,85,86,82,92,80,78,76,88,85,80,87,78,98,73,67,97,88,75,87,88,88,97,85,70,80],
-    "Pendidikan Jasmani Olahraga dan Kesehatan": [95,93,96,93,94,95,94,96,93,93,95,94,96,95,96,95,94,95,96,95,95,95,93,94,95,97,94,94],
-    "Pendidikan Lingkungan dan Budaya Jakarta": [80,85,87,91,86,97,93,92,95,78,92,96,93,91,91,96,87,88,99,85,95,94,76,95,97,92,79,96],
-    "Pendidikan Pancasila": [79,83,84,85,84,87,94,84,89,84,90,86,82,89,89,96,92,87,94,83,91,90,84,93,95,94,87,92],
-    "Praktek Ibadah": [88,91,95,98,94,99,94,96,85,88,91,98,99,95,99,100,92,86,100,92,100,98,84,96,96,95,86,93],
-    "Seni Budaya": [93,93,96,98,93,93,96,93,94,96,96,94,96,93,97,98,95,93,97,93,95,98,93,94,96,93,93,95],
-    "Siroh": [91,87,94,99,94,100,96,100,90,91,96,85,90,93,99,99,93,85,100,96,99,95,84,100,100,98,84,94]
-}
+nisn_list = [
+    3143539590, 3150333935, 3161328188, 3157710996, 3158913526, 3157089416, 3150492070, 3154615260,
+    3161409449, 3162906560, 3159758093, 3156456673, 3164882755, 3169680431, 3152014029, 3157612630,
+    3149765954, 3159261937, 3158866436, 158718478, 133692902, 159673218, 3168078382, 158633055,
+    136408533, 3153379248, 3158669297, 3161542999
+]
 
 subject_columns = [
     "Adab dan Akhlak", "Al-Qur'an", "Aqidah", "Bahasa Arab", "Bahasa Indonesia",
@@ -599,20 +537,68 @@ subject_columns = [
     "Seni Budaya", "Siroh"
 ]
 
-# ============ SIDEBAR ============
+# Data nilai lengkap
+scores_data = [
+    [95,91,76,88,80,87,93,68,87,65,95,80,79,88,93,91],
+    [94,97,76,91,80,98,95,79,97,67,93,85,83,91,93,87],
+    [94,96,90,95,80,94,96,92,97,90,96,87,84,95,96,94],
+    [96,98,93,98,83,95,100,90,100,85,93,91,85,98,98,99],
+    [92,93,86,94,81,95,91,72,98,86,94,86,84,94,93,94],
+    [99,96,88,99,84,99,98,89,100,82,95,97,87,99,93,100],
+    [99,94,88,94,89,98,98,92,97,92,94,93,94,94,96,96],
+    [93,97,79,96,87,93,98,94,97,80,96,92,84,96,93,100],
+    [93,92,77,85,83,97,91,92,93,78,93,95,89,85,94,90],
+    [92,92,80,88,80,98,92,72,96,76,93,78,84,88,96,91],
+    [96,97,86,91,83,97,95,91,97,88,95,92,90,91,96,96],
+    [97,91,79,96,87,100,96,89,94,85,94,96,86,98,94,85],
+    [96,91,94,99,91,96,91,94,96,80,96,93,82,99,96,90],
+    [95,93,94,95,84,98,96,90,96,87,95,91,89,95,93,93],
+    [92,98,86,99,82,96,96,88,94,78,96,91,89,99,97,99],
+    [100,97,93,100,94,97,99,96,99,98,95,96,96,100,98,99],
+    [97,91,82,92,87,96,95,89,94,73,94,87,92,92,95,93],
+    [98,90,77,86,80,87,92,82,84,67,95,88,87,86,93,85],
+    [97,99,99,100,93,99,100,98,100,97,96,99,94,100,97,100],
+    [96,92,80,92,80,92,93,84,95,88,95,85,83,92,93,96],
+    [99,95,88,100,91,96,99,88,97,75,95,95,91,100,95,99],
+    [95,99,89,98,85,99,98,87,99,87,95,94,90,98,98,95],
+    [85,90,62,84,80,86,92,75,59,88,93,76,84,84,93,84],
+    [99,96,95,96,90,98,99,96,100,88,94,95,93,96,94,100],
+    [98,95,97,96,89,98,100,96,100,97,95,97,95,96,96,100],
+    [98,95,95,95,86,98,96,94,97,85,97,92,94,95,93,98],
+    [88,92,75,86,80,89,89,73,92,70,94,79,87,86,93,84],
+    [98,91,92,93,81,97,92,85,98,80,94,96,92,93,95,94]
+]
+
+# Buat DataFrame
+data_dict = {"Nama Siswa": student_names, "NISN": nisn_list}
+for i, subject in enumerate(subject_columns):
+    data_dict[subject] = [scores[j][i] for j in range(len(scores_data))]
+
+df_default = pd.DataFrame(data_dict)
+
+# ============ SIDEBAR MENU (Mobile Friendly) ============
 with st.sidebar:
-    st.markdown("### 👨‍🎓 Menu Premium")
+    st.markdown("### 👨‍🎓 Menu")
     st.markdown("---")
-    uploaded_file = st.file_uploader("📂 Upload File Excel", type=["xlsx", "xls"])
-    use_default = st.checkbox("📚 Gunakan Data Contoh", value=True)
+    
+    # File uploader
+    st.markdown("#### 📂 Upload Data")
+    uploaded_file = st.file_uploader("Upload File Excel", type=["xlsx", "xls"], key="file_uploader")
+    
     st.markdown("---")
-    st.info(f"🎯 **KKM: {KKM}**")
+    
+    # Data source selection
+    st.markdown("#### 📊 Sumber Data")
+    use_default = st.radio("Pilih Sumber Data:", ["Data Contoh (28 Siswa)", "Upload File Excel"], index=0)
+    
     st.markdown("---")
-    st.caption("🏫 EduAnalytics Pro v3.0")
+    st.info(f"🎯 **KKM: 80**")
+    st.markdown("---")
+    st.caption("📱 EduAnalytics Mobile v3.0")
     st.caption("© 2024 All Rights Reserved")
 
 # ============ LOAD DATA ============
-if uploaded_file is not None:
+if uploaded_file is not None and use_default == "Upload File Excel":
     try:
         df = pd.read_excel(uploaded_file, engine='openpyxl')
         df = clean_dataframe(df)
@@ -625,43 +611,36 @@ if uploaded_file is not None:
             if col not in [name_col, 'NISN'] and pd.api.types.is_numeric_dtype(df[col]):
                 subject_cols.append(col)
         st.success("✅ Data berhasil dimuat!")
+        data_source = "upload"
     except Exception as e:
         st.error(f"Error: {e}")
-        st.stop()
-elif use_default:
-    df = pd.DataFrame(default_data)
-    df.insert(0, 'Nama Siswa', [
-        "ABDUL HAFIDZ", "ABDULLAH HAFIZ DHIAURRAHMAN", "ABDULLAH ZAIN", "ACHMAD ZAKY AL HAFIZ", 
-        "ADELLA KAYLIFA RAMADHANI", "ADINDA ZAHRA MAHARANI", "AISYAH AULIA RAMADHANI", 
-        "ALYA RAHMANIA", "ANDHIKA RIZKI PRATAMA", "ANINDYA PUTRI RAMADHANI", 
-        "ANNAFI ARKANANTA", "AQILA NURUL AULIA", "ASIAH NURUL JANNAH", "AULIA RAMADHANI",
-        "AZKA NAILUFAR", "BINTANG RAMADHAN", "CHIKA AMELIA PUTRI", "DZAKIYYAH AULIYAH",
-        "FARHAN ALFARIZI", "FAUZAN ABDILLAH", "FELISHA AZ-ZAHRA", "FIKRI HAIKAL", 
-        "GHINA HANIFA", "HANA NURUL AZIZAH", "HANIFAH ZAHRA", "HARUN ARRASYID", 
-        "IRENE AULIA", "JIHAN NURUL AULIA"
-    ])
-    df = df[['Nama Siswa', 'NISN'] + subject_columns]
-    subject_cols = subject_columns
-    name_col = 'Nama Siswa'
-    st.info("📚 Menggunakan data contoh (28 siswa)")
+        st.info("Menggunakan data contoh...")
+        df = df_default.copy()
+        name_col = 'Nama Siswa'
+        subject_cols = subject_columns
+        data_source = "default"
 else:
-    st.info("👈 Upload file Excel atau gunakan data contoh")
-    st.stop()
+    df = df_default.copy()
+    name_col = 'Nama Siswa'
+    subject_cols = subject_columns
+    data_source = "default"
+    if use_default == "Data Contoh (28 Siswa)":
+        st.info("📚 Menggunakan data contoh (28 siswa)")
 
 # ============ SUB HEADER ============
 st.markdown(f"""
-<div class="sub-header">
-    <div class="sub-header-title">
-        🎯 Dashboard Akademik
-    </div>
-    <div class="sub-header-badge">
-        Semester Genap 2025/2026
+<div style="background: #f8fafc; padding: 10px 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #e2e8f0;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
+        <div style="font-weight: 600; color: #0f172a;">🎯 Dashboard Akademik</div>
+        <div style="background: #2563eb; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.7rem;">Semester Ganjil 2024/2025</div>
     </div>
 </div>
 """, unsafe_allow_html=True)
 
 # ============ MAIN CONTENT ============
 if df is not None and len(subject_cols) > 0:
+    
+    KKM = 80
     
     # Student Selection - Nama Siswa TAMPIL PUTIH
     st.markdown("### 🎓 Pilih Siswa")
@@ -678,23 +657,23 @@ if df is not None and len(subject_cols) > 0:
     st.markdown(f"""
     <div class="premium-card">
         <div class="saldo-label">🏆 RATA-RATA NILAI AKADEMIK</div>
-        <div class="saldo-nilai">{avg_score:.1f} <span style="font-size: 1rem;">/ 100</span></div>
-        <div style="display: flex; justify-content: space-between; margin-top: 15px;">
+        <div class="saldo-nilai">{avg_score:.1f} <span style="font-size: 0.9rem;">/ 100</span></div>
+        <div style="display: flex; justify-content: space-between; margin-top: 12px; flex-wrap: wrap; gap: 10px;">
             <div>
                 <div class="saldo-label">Nilai Tertinggi</div>
-                <div style="font-size: 1.2rem; font-weight: 700;">{max_score:.0f}</div>
+                <div style="font-size: 1.1rem; font-weight: 700;">{max_score:.0f}</div>
             </div>
             <div>
                 <div class="saldo-label">Nilai Terendah</div>
-                <div style="font-size: 1.2rem; font-weight: 700;">{min_score:.0f}</div>
+                <div style="font-size: 1.1rem; font-weight: 700;">{min_score:.0f}</div>
             </div>
             <div>
                 <div class="saldo-label">KKM</div>
-                <div style="font-size: 1.2rem; font-weight: 700;">{KKM}</div>
+                <div style="font-size: 1.1rem; font-weight: 700;">{KKM}</div>
             </div>
             <div>
                 <div class="saldo-label">Kategori</div>
-                <div style="font-size: 1rem; font-weight: 600;">{grade_info.split(' ')[0]}</div>
+                <div style="font-size: 0.9rem; font-weight: 600;">{grade_info.split(' ')[0]}</div>
             </div>
         </div>
     </div>
@@ -711,11 +690,11 @@ if df is not None and len(subject_cols) > 0:
     istimewa = sum(1 for s in scores if s >= 90)
     
     with col1:
-        st.metric("📚 Total Mata Pelajaran", total_mapel)
+        st.metric("📚 Total Mapel", total_mapel)
     with col2:
-        st.metric(f"✅ Lulus KKM (≥{KKM})", f"{lulus} / {total_mapel}")
+        st.metric(f"✅ Lulus (≥{KKM})", f"{lulus} / {total_mapel}")
     with col3:
-        st.metric("⚠️ Perlu Bimbingan (<70)", f"{perlu_bimbingan} / {total_mapel}")
+        st.metric("⚠️ Perlu Bimbingan", f"{perlu_bimbingan} / {total_mapel}")
     with col4:
         st.metric("🏆 Istimewa (≥90)", f"{istimewa} / {total_mapel}")
     
@@ -736,7 +715,7 @@ if df is not None and len(subject_cols) > 0:
             <div class="premium-progress">
                 <div class="progress-label">
                     <span><strong>{subject}</strong></span>
-                    <span class="score-chip {chip}">{score:.0f} | {grade} | {status}</span>
+                    <span class="score-chip {chip}">{score:.0f} | {grade.split(' ')[0]}</span>
                 </div>
                 <div class="progress-bar-bg">
                     <div class="progress-bar-fill" style="width: {score}%;"></div>
@@ -754,7 +733,7 @@ if df is not None and len(subject_cols) > 0:
             <div class="premium-progress">
                 <div class="progress-label">
                     <span><strong>{subject}</strong></span>
-                    <span class="score-chip {chip}">{score:.0f} | {grade} | {status}</span>
+                    <span class="score-chip {chip}">{score:.0f} | {grade.split(' ')[0]}</span>
                 </div>
                 <div class="progress-bar-bg">
                     <div class="progress-bar-fill" style="width: {score}%; background: {bar_color};"></div>
@@ -777,21 +756,21 @@ if df is not None and len(subject_cols) > 0:
             marker_color=colors_bar,
             text=scores,
             textposition='auto',
-            textfont=dict(color='white', size=11),
+            textfont=dict(color='white', size=9),
             hovertemplate='<b>%{x}</b><br>Nilai: %{y}<extra></extra>'
         ))
         fig.add_hline(y=KKM, line_dash="dash", line_color="#ef4444", line_width=2, 
-                     annotation_text=f"KKM ({KKM})", annotation_font_color="#ef4444")
+                     annotation_text=f"KKM ({KKM})", annotation_font_color="#ef4444", annotation_font_size=10)
         fig.update_layout(
-            title=dict(text=f"Analisis Nilai {selected_student}", font=dict(color='#0f172a', size=18)),
+            title=dict(text=f"Analisis Nilai {selected_student}", font=dict(color='#0f172a', size=14)),
             xaxis_title="Mata Pelajaran",
             yaxis_title="Nilai",
-            height=500,
+            height=400,
             template='plotly_white',
             paper_bgcolor='white',
             plot_bgcolor='white',
             font=dict(color='#0f172a'),
-            xaxis={'tickangle': -45, 'tickfont': dict(color='#0f172a', size=10)},
+            xaxis={'tickangle': -45, 'tickfont': dict(color='#0f172a', size=8)},
             yaxis={'tickfont': dict(color='#0f172a'), 'gridcolor': '#e2e8f0', 'range': [0, 100]}
         )
         st.plotly_chart(fig, use_container_width=True)
@@ -806,15 +785,15 @@ if df is not None and len(subject_cols) > 0:
             gauge1 = create_gauge_chart(avg_score, "Rata-rata", "#2563eb", KKM)
             st.plotly_chart(gauge1, use_container_width=True)
         with col_g2:
-            gauge2 = create_gauge_chart(max_score, "Nilai Tertinggi", "#10b981", KKM)
+            gauge2 = create_gauge_chart(max_score, "Tertinggi", "#10b981", KKM)
             st.plotly_chart(gauge2, use_container_width=True)
         with col_g3:
-            gauge3 = create_gauge_chart(min_score, "Nilai Terendah", "#ef4444", KKM)
+            gauge3 = create_gauge_chart(min_score, "Terendah", "#ef4444", KKM)
             st.plotly_chart(gauge3, use_container_width=True)
     
     # ============ REKOMENDASI ============
     st.markdown("---")
-    st.markdown("### 💡 Rekomendasi & Saran Belajar")
+    st.markdown("### 💡 Rekomendasi Belajar")
     
     weak_subjects_list = [(sub, score) for sub, score in subject_scores.items() if score < KKM]
     recommendations = []
@@ -822,15 +801,13 @@ if df is not None and len(subject_cols) > 0:
     if weak_subjects_list:
         for subject, score in weak_subjects_list[:5]:
             if "Matematika" in subject:
-                rec = f"{subject} (Nilai: {score:.0f}) - Perbanyak latihan soal, ikuti bimbingan privat"
+                rec = f"{subject} (Nilai: {score:.0f}) - Perbanyak latihan soal"
             elif "Bahasa" in subject:
-                rec = f"{subject} (Nilai: {score:.0f}) - Tingkatkan kosakata dan praktek percakapan"
+                rec = f"{subject} (Nilai: {score:.0f}) - Tingkatkan kosakata"
             elif "Ilmu Pengetahuan" in subject:
-                rec = f"{subject} (Nilai: {score:.0f}) - Pelajari ulang konsep dasar"
-            elif "Qur'an" in subject or "Ibadah" in subject or "Fiqih" in subject:
-                rec = f"{subject} (Nilai: {score:.0f}) - Perdalam pemahaman agama"
+                rec = f"{subject} (Nilai: {score:.0f}) - Pelajari ulang konsep"
             else:
-                rec = f"{subject} (Nilai: {score:.0f}) - Tambah jam belajar dan diskusi"
+                rec = f"{subject} (Nilai: {score:.0f}) - Tambah jam belajar"
             recommendations.append(rec)
             st.warning(f"📚 {rec}")
     else:
@@ -842,7 +819,7 @@ if df is not None and len(subject_cols) > 0:
         st.markdown("#### 🏆 Prestasi Akademik")
         for subject, score in strengths[:3]:
             if score >= 90:
-                st.info(f"🌟 **{subject}** (Nilai: {score:.0f}) - Pertahankan prestasi!")
+                st.info(f"🌟 **{subject}** (Nilai: {score:.0f}) - Pertahankan!")
     
     # ============ DOWNLOAD PDF ============
     st.markdown("---")
@@ -858,7 +835,7 @@ if df is not None and len(subject_cols) > 0:
                     strengths, weaknesses, recommendations, KKM
                 )
                 b64 = base64.b64encode(pdf_buffer.getvalue()).decode()
-                href = f'<a href="data:application/pdf;base64,{b64}" download="Laporan_{selected_student.replace(" ", "_")}.pdf" style="text-decoration: none;"><div style="background: linear-gradient(135deg, #10b981, #059669); color: white; text-align: center; padding: 12px; border-radius: 12px; font-weight: 600;">✅ Download PDF - Klik Disini</div></a>'
+                href = f'<a href="data:application/pdf;base64,{b64}" download="Laporan_{selected_student.replace(" ", "_")}.pdf" style="text-decoration: none;"><div style="background: linear-gradient(135deg, #10b981, #059669); color: white; text-align: center; padding: 10px; border-radius: 12px; font-weight: 600;">✅ Download PDF</div></a>'
                 st.markdown(href, unsafe_allow_html=True)
                 st.balloons()
                 st.success("✅ Laporan PDF siap!")
