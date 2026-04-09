@@ -655,7 +655,7 @@ st.markdown(f"""
         🎯 Dashboard Akademik
     </div>
     <div class="sub-header-badge">
-        Semester Ganjil 2024/2025
+        Semester Genap 2025/2026
     </div>
 </div>
 """, unsafe_allow_html=True)
