@@ -310,10 +310,9 @@ def create_bar_chart_image(scores, subjects, kkm, title):
     buf.seek(0)
     return buf
 
-
 def create_professional_pdf(nama, nisn, subjects, scores_s1, scores_s2, 
                             avg_s1, avg_s2, kkm, items, has_s2):
-    """PROFESSIONAL PDF REPORT - A4 PORTRAIT"""
+    """PROFESSIONAL PDF REPORT - A4 PORTRAIT (semua mapel ditampilkan)"""
     buffer = BytesIO()
     
     doc = SimpleDocTemplate(
@@ -367,6 +366,10 @@ def create_professional_pdf(nama, nisn, subjects, scores_s1, scores_s2,
         'Small', fontName='Helvetica', fontSize=7,
         textColor=gray, leading=9
     )
+    style_center = ParagraphStyle(
+        'Center', fontName='Helvetica', fontSize=8,
+        alignment=TA_CENTER, leading=10
+    )
     
     # ===== KOP SURAT =====
     kop_rows = [
@@ -418,11 +421,22 @@ def create_professional_pdf(nama, nisn, subjects, scores_s1, scores_s2,
     except:
         pass
     
+    # Hitung status kelulusan
+    valid_s1 = [s for s in scores_s1 if not pd.isna(s)]
+    total_s1 = len(valid_s1)
+    lulus_s1 = sum(1 for s in valid_s1 if s >= kkm)
+    remidi_count = total_s1 - lulus_s1
+    if remidi_count == 0:
+        status_lulus = "✅ Semua mapel LULUS"
+    else:
+        status_lulus = f"⚠️ {remidi_count} mapel perlu perbaikan (REMIDI)"
+    
     id_data = [
         ['Nama Lengkap', ':', str(nama)],
         ['NISN', ':', nisn_str],
         ['Tanggal Laporan', ':', datetime.now().strftime('%d %B %Y')],
-        ['KKM', ':', str(kkm)],
+        ['KKM (Standar Kelulusan)', ':', str(kkm)],
+        ['Status Kelulusan', ':', status_lulus],
         ['Jumlah Mata Pelajaran', ':', str(len(subjects))],
     ]
     
@@ -441,12 +455,50 @@ def create_professional_pdf(nama, nisn, subjects, scores_s1, scores_s2,
     story.append(id_table)
     story.append(Spacer(1, 0.5*cm))
     
-    # ===== RINGKASAN =====
+    # ===== FITUR BARU: RINGKASAN UNTUK ORANG TUA =====
+    story.append(Paragraph("👀 YANG PERLU DIPERHATIKAN", style_section))
+    
+    # Ambil 3 terendah dan 3 tertinggi
+    sorted_items = sorted(items, key=lambda x: x['s1'])
+    lowest_3 = sorted_items[:3]
+    highest_3 = sorted_items[-3:][::-1] if len(sorted_items) >= 3 else sorted_items[::-1]
+    
+    if remidi_count > 0:
+        intro = f"Ananda <b>{nama}</b> memiliki <b>{remidi_count} mata pelajaran</b> yang masih di bawah standar kelulusan ({kkm}). "
+        intro += "Perhatikan mata pelajaran berikut:"
+        story.append(Paragraph(intro, style_normal))
+        story.append(Spacer(1, 0.2*cm))
+        for i, item in enumerate(lowest_3, 1):
+            rek = get_recommendation(item['subj'], item['s1'], kkm)
+            story.append(Paragraph(
+                f"{i}. <b>{item['subj']}</b> (Nilai: {item['s1']:.0f}) – {rek}",
+                style_normal
+            ))
+    else:
+        story.append(Paragraph(
+            f"🎉 Selamat! Ananda <b>{nama}</b> telah mencapai standar kelulusan di semua mata pelajaran. "
+            "Pertahankan prestasi ini dan terus tingkatkan kemampuan.",
+            style_normal
+        ))
+        story.append(Spacer(1, 0.2*cm))
+        story.append(Paragraph("<b>Pencapaian tertinggi:</b>", style_normal))
+        for i, item in enumerate(highest_3, 1):
+            story.append(Paragraph(
+                f"{i}. <b>{item['subj']}</b> (Nilai: {item['s1']:.0f})",
+                style_normal
+            ))
+    
+    story.append(Spacer(1, 0.2*cm))
+    story.append(Paragraph(
+        "💡 <b>Tips untuk orang tua:</b> Diskusikan dengan anak tentang mata pelajaran yang perlu perbaikan. "
+        "Buat jadwal belajar tambahan dan konsultasikan dengan guru jika diperlukan.",
+        style_normal
+    ))
+    story.append(Spacer(1, 0.6*cm))
+    
+    # ===== RINGKASAN AKADEMIK =====
     story.append(Paragraph("B. RINGKASAN AKADEMIK", style_section))
     
-    valid_s1 = [s for s in scores_s1 if not pd.isna(s)]
-    lulus_s1 = sum(1 for s in valid_s1 if s >= kkm)
-    total_s1 = len(valid_s1)
     max_s1 = max(valid_s1) if valid_s1 else 0
     min_s1 = min(valid_s1) if valid_s1 else 0
     
@@ -525,26 +577,43 @@ def create_professional_pdf(nama, nisn, subjects, scores_s1, scores_s2,
     story.append(Paragraph(f"Laporan: {nama} | NISN: {nisn_str}", style_small))
     story.append(Spacer(1, 0.3*cm))
     
-    # ===== DETAIL LENGKAP =====
+    # ===== DETAIL LENGKAP (SEMUA MAPEL DITAMPILKAN) =====
     story.append(Paragraph("D. REKAPITULASI NILAI LENGKAP", style_section))
+    story.append(Paragraph(
+        f"Keterangan: KKM = {kkm} | Nilai ≥ {kkm} = LULUS | '-' berarti data tidak tersedia",
+        style_small
+    ))
+    story.append(Spacer(1, 0.2*cm))
     
     detail_data = [['No', 'Mata Pelajaran', 'Nilai S1', 'Nilai S2', 'Trend', 'Status', 'Grade']]
     
     for i, subj in enumerate(subjects):
         s1 = scores_s1[i]
-        if pd.isna(s1):
-            continue
-        
         s2 = scores_s2[i] if has_s2 and scores_s2 and i < len(scores_s2) else None
         
+        # Jika nilai S1 kosong, tampilkan "-" dan status N/A
+        if pd.isna(s1):
+            s2_display = f'{s2:.0f}' if s2 is not None and not pd.isna(s2) else '-'
+            detail_data.append([
+                str(i+1), subj,
+                '-',
+                s2_display,
+                '-',
+                'N/A',
+                '-'
+            ])
+            continue
+        
+        # Proses normal untuk nilai yang ada
+        # Trend
         if s2 is not None and not pd.isna(s2):
             diff = s2 - s1
             if diff > 3:
-                trend = f'▲ +{diff:.0f}'   # Naik signifikan
+                trend = f'▲ +{diff:.0f}'
             elif diff < -3:
-                trend = f'▼ {diff:.0f}'    # Turun signifikan
+                trend = f'▼ {diff:.0f}'
             else:
-                trend = '➡️ Stabil'        # Perubahan kecil/tidak signifikan
+                trend = '➡️ Stabil'
         else:
             trend = '-'
         
@@ -558,8 +627,9 @@ def create_professional_pdf(nama, nisn, subjects, scores_s1, scores_s2,
             trend, status, grade
         ])
     
+    # Lebar kolom disesuaikan
     detail_table = Table(detail_data,
-                        colWidths=[0.7*cm, 4*cm, 1.5*cm, 1.5*cm, 1.5*cm, 2*cm, 1.5*cm],
+                        colWidths=[0.6*cm, 3.5*cm, 1.2*cm, 1.2*cm, 1.4*cm, 1.5*cm, 1.8*cm],
                         repeatRows=1)
     
     detail_style_cmds = [
@@ -576,9 +646,11 @@ def create_professional_pdf(nama, nisn, subjects, scores_s1, scores_s2,
     ]
     
     for i, row in enumerate(detail_data[1:], 1):
-        if row[5] == 'REMIDI':
+        if len(row) > 5 and row[5] == 'REMIDI':
             detail_style_cmds.append(('BACKGROUND', (0, i), (-1, i), colors.HexColor('#fef2f2')))
             detail_style_cmds.append(('TEXTCOLOR', (5, i), (5, i), red))
+        elif len(row) > 5 and row[5] == 'N/A':
+            detail_style_cmds.append(('TEXTCOLOR', (0, i), (-1, i), gray))
     
     detail_table.setStyle(TableStyle(detail_style_cmds))
     story.append(detail_table)
@@ -622,18 +694,8 @@ def create_professional_pdf(nama, nisn, subjects, scores_s1, scores_s2,
     for i, item in enumerate(sorted_desc[:5], 1):
         s2_str = f'{item["s2"]:.0f}' if item['s2'] is not None and not pd.isna(item['s2']) else '-'
         grade, _, label = get_grade(item['s1'], kkm)
-        
-        subj = item['subj']
-        if "Matematika" in subj: rek = "Perbanyak latihan soal rutin"
-        elif "Bahasa" in subj and ("Arab" in subj or "Inggris" in subj): rek = "Hafalkan kosakata & praktek"
-        elif "Bahasa" in subj: rek = "Perbanyak membaca & menulis"
-        elif "IPA" in subj or "IPS" in subj or "Ilmu" in subj: rek = "Pelajari konsep dasar & praktikum"
-        elif any(w in subj for w in ["Qur'an", "Ibadah", "Fiqih", "Adab", "Aqidah", "Siroh"]): rek = "Perdalam pemahaman & diskusi"
-        elif "PJOK" in subj or "Olahraga" in subj: rek = "Tingkatkan latihan fisik"
-        elif "Seni" in subj: rek = "Perbanyak latihan & eksplorasi"
-        else: rek = "Tambah jam belajar & remedial"
-        
-        weak_data.append([str(i), subj, f'{item["s1"]:.0f}', s2_str,
+        rek = get_recommendation(item['subj'], item['s1'], kkm)
+        weak_data.append([str(i), item['subj'], f'{item["s1"]:.0f}', s2_str,
                          f'{grade} ({label})', rek])
     
     weak_table = Table(weak_data, colWidths=[1*cm, 3.5*cm, 1.8*cm, 1.8*cm, 3*cm, 3*cm])
@@ -666,10 +728,9 @@ def create_professional_pdf(nama, nisn, subjects, scores_s1, scores_s2,
         ))
         story.append(Spacer(1, 0.2*cm))
         for i, item in enumerate(weak_subjects_list, 1):
+            rek = get_recommendation(item['subj'], item['s1'], kkm)
             story.append(Paragraph(
-                f"{i}. <b>{item['subj']}</b> (Nilai: {item['s1']:.0f}) - "
-                f"Perlu perhatian khusus. Disarankan untuk mengikuti program remedial, "
-                f"bimbingan belajar tambahan, dan pendampingan belajar di rumah.",
+                f"{i}. <b>{item['subj']}</b> (Nilai: {item['s1']:.0f}) – {rek}",
                 style_normal
             ))
     else:
@@ -731,6 +792,34 @@ def create_professional_pdf(nama, nisn, subjects, scores_s1, scores_s2,
     doc.build(story)
     buffer.seek(0)
     return buffer
+
+def get_recommendation(subj, score, kkm):
+    """Memberikan rekomendasi spesifik berdasarkan mapel dan nilai"""
+    if score >= kkm:
+        if score >= 90:
+            return "Pertahankan dengan pengayaan dan latihan lanjutan."
+        else:
+            return "Terus tingkatkan dengan latihan rutin."
+    else:
+        subj_lower = subj.lower()
+        if "matematika" in subj_lower:
+            return "Perbanyak latihan soal cerita dan operasi hitung setiap hari."
+        elif "bahasa" in subj_lower and ("arab" in subj_lower or "inggris" in subj_lower):
+            return "Hafalkan kosakata dan praktek percakapan sederhana."
+        elif "bahasa" in subj_lower:
+            return "Perbanyak membaca buku dan latihan menulis."
+        elif "ipa" in subj_lower or "ilmu pengetahuan alam" in subj_lower:
+            return "Pelajari konsep dasar dengan praktikum sederhana."
+        elif "ips" in subj_lower or "ilmu pengetahuan sosial" in subj_lower:
+            return "Baca buku sejarah/geografi dan diskusikan dengan teman."
+        elif any(w in subj_lower for w in ["qur'an", "ibadah", "fiqih", "adab", "aqidah", "siroh"]):
+            return "Perdalam pemahaman dengan diskusi dan baca terjemahan."
+        elif "pjok" in subj_lower or "olahraga" in subj_lower:
+            return "Tingkatkan latihan fisik dan koordinasi gerak."
+        elif "seni" in subj_lower:
+            return "Perbanyak latihan dan eksplorasi kreativitas."
+        else:
+            return "Tambah jam belajar dan ikuti program remedial."
 
 
 # ============ SIDEBAR ============
