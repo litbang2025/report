@@ -386,7 +386,7 @@ def create_professional_pdf(nama, nisn, subjects, scores_s1, scores_s2,
         ('TOPPADDING', (0, 0), (-1, -1), 1),
         ('BOTTOMPADDING', (0, 0), (-1, -1), 1),
     ]))
-    story.append(kop_table)
+    story.append(KeepTogether(kop_table))  # PERBAIKAN
     
     # Double line separator
     story.append(Spacer(1, 0.15*cm))
@@ -452,48 +452,51 @@ def create_professional_pdf(nama, nisn, subjects, scores_s1, scores_s2,
         ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
         ('LINEBELOW', (0, 0), (-1, -1), 0.3, colors.HexColor('#e5e7eb')),
     ]))
-    story.append(id_table)
+    story.append(KeepTogether(id_table))  # PERBAIKAN
     story.append(Spacer(1, 0.5*cm))
     
-    # ===== FITUR BARU: RINGKASAN UNTUK ORANG TUA =====
+    # ===== RINGKASAN UNTUK ORANG TUA =====
     story.append(Paragraph("👀 YANG PERLU DIPERHATIKAN", style_section))
     
-    # Ambil 3 terendah dan 3 tertinggi
-    sorted_items = sorted(items, key=lambda x: x['s1'])
-    lowest_3 = sorted_items[:3]
-    highest_3 = sorted_items[-3:][::-1] if len(sorted_items) >= 3 else sorted_items[::-1]
-    
-    if remidi_count > 0:
-        intro = f"Ananda <b>{nama}</b> memiliki <b>{remidi_count} mata pelajaran</b> yang masih di bawah standar kelulusan ({kkm}). "
-        intro += "Perhatikan mata pelajaran berikut:"
-        story.append(Paragraph(intro, style_normal))
-        story.append(Spacer(1, 0.2*cm))
-        for i, item in enumerate(lowest_3, 1):
-            rek = get_recommendation(item['subj'], item['s1'], kkm)
+    # PERBAIKAN: jika items kosong, tampilkan pesan
+    if not items:
+        story.append(Paragraph("Tidak ada data nilai yang tersedia untuk dianalisis.", style_normal))
+    else:
+        sorted_items = sorted(items, key=lambda x: x['s1'])
+        lowest_3 = sorted_items[:3]
+        highest_3 = sorted_items[-3:][::-1] if len(sorted_items) >= 3 else sorted_items[::-1]
+        
+        if remidi_count > 0:
+            intro = f"Ananda <b>{nama}</b> memiliki <b>{remidi_count} mata pelajaran</b> yang masih di bawah standar kelulusan ({kkm}). "
+            intro += "Perhatikan mata pelajaran berikut:"
+            story.append(Paragraph(intro, style_normal))
+            story.append(Spacer(1, 0.2*cm))
+            for i, item in enumerate(lowest_3, 1):
+                rek = get_recommendation(item['subj'], item['s1'], kkm)
+                story.append(Paragraph(
+                    f"{i}. <b>{item['subj']}</b> (Nilai: {item['s1']:.0f}) – {rek}",
+                    style_normal
+                ))
+        else:
             story.append(Paragraph(
-                f"{i}. <b>{item['subj']}</b> (Nilai: {item['s1']:.0f}) – {rek}",
+                f"🎉 Selamat! Ananda <b>{nama}</b> telah mencapai standar kelulusan di semua mata pelajaran. "
+                "Pertahankan prestasi ini dan terus tingkatkan kemampuan.",
                 style_normal
             ))
-    else:
+            story.append(Spacer(1, 0.2*cm))
+            story.append(Paragraph("<b>Pencapaian tertinggi:</b>", style_normal))
+            for i, item in enumerate(highest_3, 1):
+                story.append(Paragraph(
+                    f"{i}. <b>{item['subj']}</b> (Nilai: {item['s1']:.0f})",
+                    style_normal
+                ))
+        
+        story.append(Spacer(1, 0.2*cm))
         story.append(Paragraph(
-            f"🎉 Selamat! Ananda <b>{nama}</b> telah mencapai standar kelulusan di semua mata pelajaran. "
-            "Pertahankan prestasi ini dan terus tingkatkan kemampuan.",
+            "💡 <b>Tips untuk orang tua:</b> Diskusikan dengan anak tentang mata pelajaran yang perlu perbaikan. "
+            "Buat jadwal belajar tambahan dan konsultasikan dengan guru jika diperlukan.",
             style_normal
         ))
-        story.append(Spacer(1, 0.2*cm))
-        story.append(Paragraph("<b>Pencapaian tertinggi:</b>", style_normal))
-        for i, item in enumerate(highest_3, 1):
-            story.append(Paragraph(
-                f"{i}. <b>{item['subj']}</b> (Nilai: {item['s1']:.0f})",
-                style_normal
-            ))
-    
-    story.append(Spacer(1, 0.2*cm))
-    story.append(Paragraph(
-        "💡 <b>Tips untuk orang tua:</b> Diskusikan dengan anak tentang mata pelajaran yang perlu perbaikan. "
-        "Buat jadwal belajar tambahan dan konsultasikan dengan guru jika diperlukan.",
-        style_normal
-    ))
     story.append(Spacer(1, 0.6*cm))
     
     # ===== RINGKASAN AKADEMIK =====
@@ -549,22 +552,24 @@ def create_professional_pdf(nama, nisn, subjects, scores_s1, scores_s2,
         ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
         ('TEXTCOLOR', (0, 1), (0, -1), navy),
     ]))
-    story.append(ringkasan_table)
+    story.append(KeepTogether(ringkasan_table))  # PERBAIKAN
     story.append(Spacer(1, 0.6*cm))
     
     # ===== GRAFIK =====
     story.append(Paragraph("C. VISUALISASI NILAI", style_section))
     
     try:
+        # Buat nilai grafik dengan NaN diganti 0
+        chart_scores = [s if not pd.isna(s) else 0 for s in scores_s1]
         chart_buf = create_bar_chart_image(
-            [s if not pd.isna(s) else 0 for s in scores_s1],
+            chart_scores,
             subjects, kkm,
             f'Grafik Nilai Semester 1 - {nama}'
         )
         chart_img = Image(chart_buf, width=doc.width * 0.9, height=4*cm)
-        story.append(chart_img)
+        story.append(KeepTogether(chart_img))  # PERBAIKAN
     except Exception as e:
-        story.append(Paragraph(f"(Grafik tidak dapat ditampilkan)", style_small))
+        story.append(Paragraph(f"(Grafik tidak dapat ditampilkan: {str(e)})", style_small))
     
     story.append(Spacer(1, 0.5*cm))
     
@@ -588,10 +593,10 @@ def create_professional_pdf(nama, nisn, subjects, scores_s1, scores_s2,
     detail_data = [['No', 'Mata Pelajaran', 'Nilai S1', 'Nilai S2', 'Trend', 'Status', 'Grade']]
     
     for i, subj in enumerate(subjects):
-        s1 = scores_s1[i]
+        s1 = scores_s1[i] if i < len(scores_s1) else np.nan
         s2 = scores_s2[i] if has_s2 and scores_s2 and i < len(scores_s2) else None
         
-        # Jika nilai S1 kosong, tampilkan "-" dan status N/A
+        # Jika nilai S1 kosong
         if pd.isna(s1):
             s2_display = f'{s2:.0f}' if s2 is not None and not pd.isna(s2) else '-'
             detail_data.append([
@@ -604,8 +609,7 @@ def create_professional_pdf(nama, nisn, subjects, scores_s1, scores_s2,
             ])
             continue
         
-        # Proses normal untuk nilai yang ada
-        # Trend
+        # Proses normal
         if s2 is not None and not pd.isna(s2):
             diff = s2 - s1
             if diff > 3:
@@ -627,7 +631,7 @@ def create_professional_pdf(nama, nisn, subjects, scores_s1, scores_s2,
             trend, status, grade
         ])
     
-    # Lebar kolom disesuaikan
+    # Tabel
     detail_table = Table(detail_data,
                         colWidths=[0.6*cm, 3.5*cm, 1.2*cm, 1.2*cm, 1.4*cm, 1.5*cm, 1.8*cm],
                         repeatRows=1)
@@ -653,71 +657,75 @@ def create_professional_pdf(nama, nisn, subjects, scores_s1, scores_s2,
             detail_style_cmds.append(('TEXTCOLOR', (0, i), (-1, i), gray))
     
     detail_table.setStyle(TableStyle(detail_style_cmds))
-    story.append(detail_table)
+    story.append(KeepTogether(detail_table))  # PERBAIKAN
     story.append(Spacer(1, 0.5*cm))
     
     # ===== KEKUATAN =====
     story.append(Paragraph("E. ANALISIS KEKUATAN & KELEMAHAN", style_section))
     story.append(Paragraph("Kekuatan Akademik (5 Nilai Tertinggi Semester 1)", style_subsection))
     
-    sorted_asc = sorted(items, key=lambda x: x['s1'], reverse=True)
-    
-    str_data = [['No', 'Mata Pelajaran', 'Nilai S1', 'Nilai S2', 'Grade', 'Catatan']]
-    for i, item in enumerate(sorted_asc[:5], 1):
-        s2_str = f'{item["s2"]:.0f}' if item['s2'] is not None and not pd.isna(item['s2']) else '-'
-        grade, _, label = get_grade(item['s1'], kkm)
-        str_data.append([str(i), item['subj'], f'{item["s1"]:.0f}', s2_str,
-                        f'{grade} ({label})', 'Pertahankan prestasi!'])
-    
-    str_table = Table(str_data, colWidths=[1*cm, 3.5*cm, 1.8*cm, 1.8*cm, 3*cm, 3*cm])
-    str_table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), green),
-        ('TEXTCOLOR', (0, 0), (-1, 0), white),
-        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, -1), 8),
-        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-        ('GRID', (0, 0), (-1, -1), 0.3, colors.HexColor('#cbd5e1')),
-        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [white, colors.HexColor('#f0fdf4')]),
-        ('TOPPADDING', (0, 0), (-1, -1), 4),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
-    ]))
-    story.append(str_table)
+    if items:
+        sorted_asc = sorted(items, key=lambda x: x['s1'], reverse=True)
+        str_data = [['No', 'Mata Pelajaran', 'Nilai S1', 'Nilai S2', 'Grade', 'Catatan']]
+        for i, item in enumerate(sorted_asc[:5], 1):
+            s2_str = f'{item["s2"]:.0f}' if item['s2'] is not None and not pd.isna(item['s2']) else '-'
+            grade, _, label = get_grade(item['s1'], kkm)
+            str_data.append([str(i), item['subj'], f'{item["s1"]:.0f}', s2_str,
+                            f'{grade} ({label})', 'Pertahankan prestasi!'])
+        
+        str_table = Table(str_data, colWidths=[1*cm, 3.5*cm, 1.8*cm, 1.8*cm, 3*cm, 3*cm])
+        str_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), green),
+            ('TEXTCOLOR', (0, 0), (-1, 0), white),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, -1), 8),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('GRID', (0, 0), (-1, -1), 0.3, colors.HexColor('#cbd5e1')),
+            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [white, colors.HexColor('#f0fdf4')]),
+            ('TOPPADDING', (0, 0), (-1, -1), 4),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+        ]))
+        story.append(KeepTogether(str_table))  # PERBAIKAN
+    else:
+        story.append(Paragraph("Belum ada data nilai untuk dianalisis.", style_normal))
     story.append(Spacer(1, 0.3*cm))
     
     # ===== KELEMAHAN =====
     story.append(Paragraph("Kelemahan Akademik (5 Nilai Terendah Semester 1)", style_subsection))
     
-    sorted_desc = sorted(items, key=lambda x: x['s1'])
-    
-    weak_data = [['No', 'Mata Pelajaran', 'Nilai S1', 'Nilai S2', 'Grade', 'Rekomendasi']]
-    for i, item in enumerate(sorted_desc[:5], 1):
-        s2_str = f'{item["s2"]:.0f}' if item['s2'] is not None and not pd.isna(item['s2']) else '-'
-        grade, _, label = get_grade(item['s1'], kkm)
-        rek = get_recommendation(item['subj'], item['s1'], kkm)
-        weak_data.append([str(i), item['subj'], f'{item["s1"]:.0f}', s2_str,
-                         f'{grade} ({label})', rek])
-    
-    weak_table = Table(weak_data, colWidths=[1*cm, 3.5*cm, 1.8*cm, 1.8*cm, 3*cm, 3*cm])
-    weak_table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), red),
-        ('TEXTCOLOR', (0, 0), (-1, 0), white),
-        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, -1), 8),
-        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-        ('GRID', (0, 0), (-1, -1), 0.3, colors.HexColor('#cbd5e1')),
-        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [white, colors.HexColor('#fef2f2')]),
-        ('TOPPADDING', (0, 0), (-1, -1), 4),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
-    ]))
-    story.append(weak_table)
+    if items:
+        sorted_desc = sorted(items, key=lambda x: x['s1'])
+        weak_data = [['No', 'Mata Pelajaran', 'Nilai S1', 'Nilai S2', 'Grade', 'Rekomendasi']]
+        for i, item in enumerate(sorted_desc[:5], 1):
+            s2_str = f'{item["s2"]:.0f}' if item['s2'] is not None and not pd.isna(item['s2']) else '-'
+            grade, _, label = get_grade(item['s1'], kkm)
+            rek = get_recommendation(item['subj'], item['s1'], kkm)
+            weak_data.append([str(i), item['subj'], f'{item["s1"]:.0f}', s2_str,
+                             f'{grade} ({label})', rek])
+        
+        weak_table = Table(weak_data, colWidths=[1*cm, 3.5*cm, 1.8*cm, 1.8*cm, 3*cm, 3*cm])
+        weak_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), red),
+            ('TEXTCOLOR', (0, 0), (-1, 0), white),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, -1), 8),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('GRID', (0, 0), (-1, -1), 0.3, colors.HexColor('#cbd5e1')),
+            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [white, colors.HexColor('#fef2f2')]),
+            ('TOPPADDING', (0, 0), (-1, -1), 4),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+        ]))
+        story.append(KeepTogether(weak_table))  # PERBAIKAN
+    else:
+        story.append(Paragraph("Belum ada data nilai untuk dianalisis.", style_normal))
     story.append(Spacer(1, 0.6*cm))
     
     # ===== CATATAN =====
     story.append(Paragraph("F. CATATAN & REKOMENDASI UNTUK ORANG TUA", style_section))
     
-    weak_subjects_list = [item for item in items if item['s1'] < kkm]
+    weak_subjects_list = [item for item in items if item['s1'] < kkm] if items else []
     
     if weak_subjects_list:
         story.append(Paragraph(
@@ -776,7 +784,7 @@ def create_professional_pdf(nama, nisn, subjects, scores_s1, scores_s2,
         ('TOPPADDING', (0, 0), (-1, -1), 3),
         ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
     ]))
-    story.append(ttd_table)
+    story.append(KeepTogether(ttd_table))  # PERBAIKAN
     
     story.append(Spacer(1, 0.5*cm))
     
@@ -789,10 +797,25 @@ def create_professional_pdf(nama, nisn, subjects, scores_s1, scores_s2,
                       textColor=colors.HexColor('#94a3b8'), alignment=TA_CENTER, leading=8)
     ))
     
-    doc.build(story)
+    # Bangun dokumen dengan penanganan halaman kosong
+    try:
+        doc.build(story)
+    except Exception as e:
+        # Jika error karena halaman kosong, coba build dengan story minimal
+        if "empty" in str(e).lower():
+            # Buat story minimal (kop + pesan error)
+            error_story = [
+                Paragraph("🧪 DAPURLAB", style_kop_title),
+                Paragraph("Terjadi kesalahan dalam pembuatan laporan.", style_normal),
+                Paragraph(f"Error: {str(e)}", style_small)
+            ]
+            doc.build(error_story)
+        else:
+            raise e
+    
     buffer.seek(0)
     return buffer
-
+                                
 def get_recommendation(subj, score, kkm):
     """Memberikan rekomendasi spesifik berdasarkan mapel dan nilai"""
     if score >= kkm:
