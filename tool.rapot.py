@@ -8,827 +8,1073 @@ import base64
 from datetime import datetime
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib.units import inch, cm
+from reportlab.lib.units import inch, cm, mm
+from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT, TA_JUSTIFY
+from reportlab.platypus import (
+    SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, 
+    PageBreak, Image, KeepTogether
+)
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+import openpyxl
+from openpyxl.styles import Font as XlFont, PatternFill, Alignment, Border, Side
+from openpyxl.utils import get_column_letter
 
 # Page config
 st.set_page_config(
-    page_title="Analisis Kekuatan & Kelemahan Siswa", 
+    page_title="DapurLab - Analisis Nilai Siswa",
     layout="wide",
     initial_sidebar_state="auto",
     page_icon="📊"
 )
 
-# ============ CUSTOM CSS - RESPONSIVE MOBILE ============
+# ============ CSS ============
 st.markdown("""
 <style>
-    /* Main container */
-    .stApp {
-        background-color: #ffffff !important;
+    * { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
+    
+    .main-header {
+        background: linear-gradient(135deg, #1e3a5f, #2563eb);
+        padding: 25px 30px; border-radius: 15px;
+        color: white; margin-bottom: 25px;
+    }
+    .main-header h1 { margin: 0; font-size: 1.8rem; font-weight: 700; color: white !important; }
+    .main-header p { margin: 5px 0 0 0; opacity: 0.9; font-size: 0.9rem; color: #cbd5e1 !important; }
+    
+    .stat-card {
+        background: white; border-radius: 12px; padding: 20px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e5e7eb; margin-bottom: 15px;
+    }
+    .stat-card.primary { background: linear-gradient(135deg, #2563eb, #1d4ed8); color: white; border: none; }
+    .stat-card.success { background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; }
+    .stat-label { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.8; }
+    .stat-value { font-size: 2rem; font-weight: 700; margin: 5px 0; }
+    
+    .subject-row {
+        display: flex; align-items: center; padding: 10px 15px;
+        border-bottom: 1px solid #f3f4f6; gap: 10px; flex-wrap: wrap;
+    }
+    .subject-row:hover { background: #f9fafb; }
+    .subject-name { flex: 2; font-weight: 500; min-width: 140px; font-size: 0.9rem; }
+    .subject-scores { display: flex; gap: 15px; align-items: center; flex: 1; min-width: 120px; }
+    .subject-score { font-weight: 700; font-size: 1rem; min-width: 35px; text-align: center; }
+    .subject-bar { flex: 3; height: 8px; background: #e5e7eb; border-radius: 4px; overflow: hidden; min-width: 80px; }
+    .subject-bar-fill { height: 100%; border-radius: 4px; transition: width 0.5s; }
+    
+    .badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; min-width: 70px; text-align: center; white-space: nowrap; }
+    .badge-success { background: #dcfce7; color: #166534; }
+    .badge-warning { background: #fef3c7; color: #92400e; }
+    .badge-danger { background: #fee2e2; color: #991b1b; }
+    .badge-info { background: #dbeafe; color: #1e40af; }
+    
+    .trend-up { color: #10b981; font-weight: 700; font-size: 0.8rem; }
+    .trend-down { color: #ef4444; font-weight: 700; font-size: 0.8rem; }
+    .trend-stable { color: #64748b; font-weight: 700; font-size: 0.8rem; }
+    
+    .section-title {
+        font-size: 1.2rem; font-weight: 600; color: #1e293b;
+        margin: 20px 0 10px 0; padding-bottom: 8px;
+        border-bottom: 2px solid #e5e7eb;
     }
     
-    .main {
-        background-color: #ffffff !important;
-    }
-    
-    .block-container {
-        padding: 1rem 1rem 2rem 1rem !important;
-        background-color: #ffffff !important;
-    }
-    
-    /* Responsive untuk mobile */
-    @media (max-width: 768px) {
-        .block-container {
-            padding: 0.8rem 0.8rem 1.5rem 0.8rem !important;
-        }
-        
-        .premium-header {
-            padding: 15px 12px !important;
-        }
-        
-        .premium-header h1 {
-            font-size: 1.1rem !important;
-        }
-        
-        .premium-header p {
-            font-size: 0.65rem !important;
-        }
-        
-        .saldo-nilai {
-            font-size: 1.3rem !important;
-        }
-        
-        .info-value {
-            font-size: 0.9rem !important;
-        }
-        
-        .progress-label {
-            font-size: 0.65rem !important;
-        }
-        
-        .score-chip {
-            font-size: 0.55rem !important;
-            padding: 2px 6px !important;
-        }
-        
-        /* Mobile menu button */
-        .mobile-menu-btn {
-            display: flex !important;
-        }
-    }
-    
-    /* Desktop sidebar tetap normal */
-    @media (min-width: 769px) {
-        .mobile-upload-section {
-            display: none !important;
-        }
-    }
-    
-    /* Mobile upload section - hanya muncul di HP */
-    @media (max-width: 768px) {
-        .mobile-upload-section {
-            display: block !important;
-            margin-bottom: 15px;
-        }
-    }
-    
-    /* Premium Header */
-    .premium-header {
-        background: linear-gradient(135deg, #1e3a5f 0%, #0f2b4d 50%, #1a4a7a 100%);
-        padding: 20px 25px;
-        border-radius: 20px;
-        margin-bottom: 20px;
-        box-shadow: 0 10px 25px rgba(0,0,0,0.15);
-        position: relative;
-        overflow: hidden;
-    }
-    
-    .premium-header::before {
-        content: '';
-        position: absolute;
-        top: -30%;
-        right: -10%;
-        width: 200px;
-        height: 200px;
-        background: rgba(255,255,255,0.05);
-        border-radius: 50%;
-    }
-    
-    .premium-header h1 {
-        margin: 0;
-        font-size: 1.4rem;
-        font-weight: 700;
-        color: #ffffff !important;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-    
-    .premium-header p {
-        margin: 6px 0 0 0;
-        font-size: 0.75rem;
-        color: #cbd5e1 !important;
-    }
-    
-    /* Saldo Card */
-    .premium-card {
-        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-        border-radius: 20px;
-        padding: 18px;
-        color: #ffffff !important;
-        margin-bottom: 20px;
-        box-shadow: 0 8px 20px rgba(37,99,235,0.25);
-        position: relative;
-        overflow: hidden;
-    }
-    
-    .saldo-label {
-        font-size: 0.65rem;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        color: #bfdbfe !important;
-    }
-    
-    .saldo-nilai {
-        font-size: 1.8rem;
-        font-weight: 800;
-        margin: 6px 0;
-        color: #ffffff !important;
-    }
-    
-    /* Progress Container */
-    .premium-progress {
-        background: #f8fafc;
-        border-radius: 12px;
-        padding: 10px;
-        margin-bottom: 10px;
-        border: 1px solid #e2e8f0;
-    }
-    
-    .progress-label {
-        display: flex;
-        justify-content: space-between;
-        margin-bottom: 6px;
-        font-size: 0.7rem;
-        color: #0f172a !important;
-    }
-    
-    .progress-label strong {
-        color: #0f172a !important;
-    }
-    
-    .progress-bar-bg {
-        background: #e2e8f0;
-        border-radius: 10px;
-        height: 6px;
-        overflow: hidden;
-    }
-    
-    .progress-bar-fill {
-        background: linear-gradient(90deg, #2563eb, #1d4ed8);
-        height: 100%;
-        border-radius: 10px;
-    }
-    
-    /* Score Chips */
-    .score-chip {
-        display: inline-flex;
-        align-items: center;
-        padding: 2px 8px;
-        border-radius: 20px;
-        font-size: 0.6rem;
-        font-weight: 600;
-    }
-    
-    .chip-excellent { background: #dcfce7; color: #166534 !important; }
-    .chip-good { background: #dbeafe; color: #1e40af !important; }
-    .chip-average { background: #fed7aa; color: #9a3412 !important; }
-    .chip-poor { background: #fee2e2; color: #991b1b !important; }
-    
-    /* Metric styling */
-    [data-testid="stMetric"] {
-        background: #f8fafc;
-        border-radius: 14px;
-        padding: 10px;
-        border: 1px solid #e2e8f0;
-    }
-    
-    [data-testid="stMetricLabel"] {
-        color: #64748b !important;
-        font-size: 0.65rem !important;
-    }
-    
-    [data-testid="stMetricValue"] {
-        color: #0f172a !important;
-        font-weight: 700 !important;
-        font-size: 1rem !important;
-    }
-    
-    /* Tabs untuk mobile */
-    .stTabs [data-baseweb="tab-list"] {
-        gap: 4px;
-        background: #f1f5f9;
-        padding: 4px;
-        border-radius: 30px;
-        flex-wrap: wrap;
-    }
-    
-    .stTabs [data-baseweb="tab"] {
-        background: transparent;
-        border-radius: 25px;
-        padding: 4px 10px;
-        color: #64748b !important;
-        font-size: 0.65rem !important;
-    }
-    
-    .stTabs [aria-selected="true"] {
-        background: #ffffff !important;
-        color: #2563eb !important;
-    }
-    
-    /* Select Box */
-    .stSelectbox > div > div {
-        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
-        border: none !important;
-        border-radius: 40px !important;
-        padding: 5px 12px !important;
-    }
-    
-    .stSelectbox > div > div > div {
-        color: white !important;
-        font-weight: 600 !important;
-        font-size: 0.8rem !important;
-    }
-    
-    /* File uploader */
-    .stFileUploader > div > div {
-        background: #f8fafc !important;
-        border: 1px dashed #2563eb !important;
-        border-radius: 12px !important;
-    }
-    
-    /* Button */
-    .stButton button {
+    .stButton > button {
         background: linear-gradient(135deg, #2563eb, #1d4ed8);
-        color: white !important;
-        border: none;
-        border-radius: 12px;
-        padding: 8px 16px;
-        font-weight: 600;
-        font-size: 0.8rem;
+        color: white; border: none; border-radius: 10px;
+        padding: 12px 30px; font-weight: 600; font-size: 1rem;
+        width: 100%; cursor: pointer; transition: all 0.3s;
+    }
+    .stButton > button:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(37,99,235,0.3); }
+    
+    @media (max-width: 768px) {
+        .main-header { padding: 15px; }
+        .main-header h1 { font-size: 1.3rem; }
+        .stat-value { font-size: 1.5rem; }
+        .subject-name { min-width: 100px; font-size: 0.8rem; }
     }
     
-    /* Mobile upload card */
-    .mobile-upload-card {
-        background: #f8fafc;
-        border-radius: 16px;
-        padding: 15px;
-        margin-bottom: 20px;
-        border: 1px solid #e2e8f0;
-    }
-    
-    .mobile-upload-title {
-        font-weight: 600;
-        color: #0f172a;
-        margin-bottom: 10px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-    
-    /* Hide Streamlit Branding */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     header {visibility: hidden;}
-    
-    [data-testid="stSidebar"] {
-        background: #f8fafc;
-        border-right: 1px solid #e2e8f0;
-    }
-    
-    @media (max-width: 768px) {
-        [data-testid="stSidebar"] {
-            min-width: 260px !important;
-        }
-    }
 </style>
 """, unsafe_allow_html=True)
 
-# ============ HEADER PREMIUM ============
-st.markdown("""
-<div class="premium-header">
-    <h1>
-        <span>🎓</span> Analisis Kekuatan & Kelemahan Siswa
-    </h1>
-    <p>Platform Analisis Akademik | Identifikasi Potensi | Rekomendasi Belajar</p>
-</div>
-""", unsafe_allow_html=True)
 
 # ============ FUNCTIONS ============
-def fix_number_format(value):
-    if pd.isna(value):
-        return value
-    str_value = str(value)
-    if '.' in str_value and str_value.count('.') > 1:
-        parts = str_value.split('.')
-        if len(parts) >= 2:
-            fixed = f"{parts[0]}.{parts[1]}"
-            try:
-                return float(fixed)
-            except:
-                return value
-    try:
-        return float(str_value)
-    except:
-        return value
+
+def create_template_excel():
+    """Create template Excel"""
+    wb = openpyxl.Workbook()
+    
+    header_fill = PatternFill(start_color="1e3a5f", end_color="1e3a5f", fill_type="solid")
+    header_font = XlFont(color="FFFFFF", bold=True, size=11, name="Arial")
+    example_fill = PatternFill(start_color="f0f9ff", end_color="f0f9ff", fill_type="solid")
+    example_font = XlFont(italic=True, color="94a3b8", size=10, name="Arial")
+    border = Border(
+        left=Side(style='thin', color='d1d5db'),
+        right=Side(style='thin', color='d1d5db'),
+        top=Side(style='thin', color='d1d5db'),
+        bottom=Side(style='thin', color='d1d5db')
+    )
+    section_fill = PatternFill(start_color="dbeafe", end_color="dbeafe", fill_type="solid")
+    
+    # Sheet PETUNJUK
+    ws = wb.active
+    ws.title = "PETUNJUK"
+    ws.merge_cells('A1:H1')
+    ws['A1'] = "PETUNJUK PENGISIAN DATA - DapurLab Analytics"
+    ws['A1'].font = XlFont(bold=True, size=16, color="1e3a5f", name="Arial")
+    ws['A1'].alignment = Alignment(horizontal='center', vertical='center')
+    ws.row_dimensions[1].height = 40
+    
+    instructions = [
+        ("PENTING!", "Baris 1 adalah HEADER. JANGAN DIHAPUS!"),
+        ("Kolom A", "NISN - WAJIB diisi (bisa angka atau teks)"),
+        ("Kolom B", "Nama Siswa - WAJIB diisi"),
+        ("Kolom C dst", "NILAI MAPEL - Bisa ditambah kolom baru"),
+        ("", ""),
+        ("ATURAN:", "Nilai 0-100, jumlah mapel TIDAK TERBATAS, nama mapel BOLEH disesuaikan"),
+        ("TIPS:", "Sheet SEMESTER_2 opsional untuk perbandingan"),
+    ]
+    
+    row = 3
+    for label, text in instructions:
+        if label in ["PENTING!", "ATURAN:", "TIPS:"]:
+            ws.merge_cells(f'A{row}:H{row}')
+            ws[f'A{row}'] = f"📌 {label}"
+            ws[f'A{row}'].font = XlFont(bold=True, size=12, color="1e40af", name="Arial")
+            ws[f'A{row}'].fill = section_fill
+            row += 1
+            if text:
+                ws.merge_cells(f'A{row}:H{row}')
+                ws[f'A{row}'] = text
+                ws[f'A{row}'].font = XlFont(size=10, name="Arial")
+                row += 1
+        elif label:
+            ws[f'A{row}'] = label
+            ws[f'A{row}'].font = XlFont(bold=True, size=10, name="Arial")
+            ws.merge_cells(f'B{row}:H{row}')
+            ws[f'B{row}'] = text
+            ws[f'B{row}'].font = XlFont(size=10, name="Arial")
+            row += 1
+        else:
+            row += 1
+    
+    ws.column_dimensions['A'].width = 12
+    for col in ['B', 'C', 'D', 'E', 'F', 'G', 'H']:
+        ws.column_dimensions[col].width = 20
+    
+    # Sheet SEMESTER
+    default_subjects = [
+        "Adab dan Akhlak", "Al-Qur'an", "Aqidah", "Bahasa Arab",
+        "Bahasa Indonesia", "Bahasa Inggris", "Fiqih", "IPA",
+        "IPS", "Matematika", "PJOK", "PLBJ",
+        "Pendidikan Pancasila", "Praktek Ibadah", "Seni Budaya", "Siroh"
+    ]
+    
+    for sheet_name in ["SEMESTER_1", "SEMESTER_2"]:
+        ws_data = wb.create_sheet(sheet_name)
+        headers = ["NISN", "Nama Siswa"] + default_subjects
+        
+        for col_idx, header in enumerate(headers, 1):
+            cell = ws_data.cell(row=1, column=col_idx, value=header)
+            cell.fill = header_fill
+            cell.font = header_font
+            cell.alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
+            cell.border = border
+        
+        example_data = [1234567890, "CONTOH: Ahmad Fauzi"] + [85] * len(default_subjects)
+        for col_idx, value in enumerate(example_data, 1):
+            cell = ws_data.cell(row=3, column=col_idx, value=value)
+            cell.fill = example_fill
+            cell.font = example_font
+            cell.border = border
+            cell.alignment = Alignment(horizontal='center')
+        
+        for row_idx in range(4, 54):
+            for col_idx in range(1, len(headers) + 1):
+                cell = ws_data.cell(row=row_idx, column=col_idx)
+                cell.border = Border(
+                    left=Side(style='hair', color='e5e7eb'),
+                    right=Side(style='hair', color='e5e7eb'),
+                    top=Side(style='hair', color='e5e7eb'),
+                    bottom=Side(style='hair', color='e5e7eb')
+                )
+                cell.alignment = Alignment(horizontal='center')
+        
+        ws_data.column_dimensions['A'].width = 15
+        ws_data.column_dimensions['B'].width = 30
+        for col in range(3, len(headers) + 1):
+            ws_data.column_dimensions[get_column_letter(col)].width = 18
+        ws_data.freeze_panes = 'C2'
+        ws_data.auto_filter.ref = f"A1:{get_column_letter(len(headers))}1"
+    
+    buffer = BytesIO()
+    wb.save(buffer)
+    buffer.seek(0)
+    return buffer
+
 
 def clean_dataframe(df):
+    """Clean dataframe"""
+    df = df.dropna(how='all')
+    df = df.dropna(axis=1, how='all')
+    
+    name_col = None
     for col in df.columns:
-        df[col] = df[col].apply(fix_number_format)
-    return df
+        if 'nama' in str(col).lower():
+            name_col = col
+            break
+    if name_col is None:
+        name_col = df.columns[1] if len(df.columns) > 1 else df.columns[0]
+    
+    df = df.dropna(subset=[name_col])
+    df = df[df[name_col].astype(str).str.strip() != '']
+    df = df[~df[name_col].astype(str).str.contains('CONTOH|Contoh|contoh', na=False)]
+    
+    for col in df.columns:
+        if col != name_col and 'nisn' not in str(col).lower():
+            df[col] = pd.to_numeric(df[col], errors='coerce')
+    
+    return df, name_col
 
-def get_grade_info(score, kkm=80):
-    if score >= 95:
-        return "A+ (Sangat Istimewa)", "chip-excellent", "#166534"
-    elif score >= 90:
-        return "A (Istimewa)", "chip-excellent", "#166534"
-    elif score >= 85:
-        return "B+ (Sangat Baik)", "chip-good", "#1e40af"
-    elif score >= kkm:
-        return "B (Baik)", "chip-good", "#1e40af"
-    elif score >= 70:
-        return "C+ (Cukup)", "chip-average", "#9a3412"
-    elif score >= 60:
-        return "C (Kurang)", "chip-poor", "#991b1b"
-    else:
-        return "D (Perbaikan)", "chip-poor", "#991b1b"
 
-def create_radar_chart(scores, subjects, student_name, kkm=80):
-    fig = go.Figure()
-    fig.add_trace(go.Scatterpolar(
-        r=scores,
-        theta=subjects,
-        fill='toself',
-        name=student_name,
-        line_color='#2563eb',
-        line_width=2,
-        fillcolor='rgba(37, 99, 235, 0.2)'
-    ))
-    fig.update_layout(
-        polar=dict(
-            radialaxis=dict(
-                visible=True, 
-                range=[0, 100], 
-                gridcolor='#cbd5e1',
-                tickfont=dict(color='#0f172a', size=8)
-            ),
-            angularaxis=dict(
-                tickfont=dict(color='#0f172a', size=7),
-                gridcolor='#e2e8f0'
-            )
-        ),
-        showlegend=True,
-        height=400,
-        title=dict(
-            text=f"Radar Chart - {student_name}", 
-            font=dict(color='#0f172a', size=14, weight='bold')
-        ),
-        template='plotly_white',
-        paper_bgcolor='white',
-        plot_bgcolor='white',
-        font=dict(color='#0f172a')
-    )
-    return fig
+def detect_subjects(df):
+    """Detect subject columns"""
+    exclude = ['nisn', 'nama', 'no', 'id', 'induk']
+    subjects = []
+    for col in df.columns:
+        col_lower = str(col).lower().strip()
+        if not any(kw in col_lower for kw in exclude):
+            subjects.append(col)
+    return subjects
 
-def create_gauge_chart(value, title, color="#2563eb", kkm=80):
-    fig = go.Figure(go.Indicator(
-        mode="gauge+number",
-        value=value,
-        title={'text': title, 'font': {'size': 12, 'color': '#0f172a'}},
-        number={'font': {'color': '#0f172a', 'size': 28, 'weight': 'bold'}},
-        gauge={
-            'axis': {'range': [0, 100], 'tickwidth': 1, 'tickcolor': '#64748b', 'tickfont': {'size': 8}},
-            'bar': {'color': color},
-            'bgcolor': 'white',
-            'borderwidth': 1,
-            'bordercolor': '#e2e8f0',
-            'steps': [
-                {'range': [0, 60], 'color': '#fee2e2'},
-                {'range': [60, kkm], 'color': '#fed7aa'},
-                {'range': [kkm, 90], 'color': '#dcfce7'},
-                {'range': [90, 100], 'color': '#bbf7d0'}
-            ],
-            'threshold': {
-                'line': {'color': "#ef4444", 'width': 3},
-                'thickness': 0.75,
-                'value': kkm
-            }
-        }
-    ))
-    fig.update_layout(
-        height=250, 
-        margin=dict(l=20, r=20, t=40, b=20), 
-        paper_bgcolor='white'
-    )
-    return fig
 
-def create_pdf_report(student_data, name_col, subject_cols, scores, avg_score, max_score, min_score, strengths, weaknesses, recommendations, kkm=80):
+def get_grade(score, kkm=80):
+    """Get grade"""
+    if pd.isna(score): return "N/A", "badge-info", "Tidak ada nilai"
+    if score >= 95: return "A+", "badge-success", "Sangat Istimewa"
+    if score >= 90: return "A", "badge-success", "Istimewa"
+    if score >= 85: return "B+", "badge-info", "Sangat Baik"
+    if score >= kkm: return "B", "badge-info", "Baik"
+    if score >= 70: return "C+", "badge-warning", "Cukup"
+    if score >= 60: return "C", "badge-warning", "Kurang"
+    return "D", "badge-danger", "Perlu Perbaikan"
+
+
+def create_bar_chart_image(scores, subjects, kkm, title):
+    """Create bar chart as image for PDF"""
+    fig, ax = plt.subplots(figsize=(7, 3.5))
+    
+    colors_bar = []
+    for s in scores:
+        if pd.isna(s):
+            colors_bar.append('#94a3b8')
+        elif s >= 90:
+            colors_bar.append('#10b981')
+        elif s >= kkm:
+            colors_bar.append('#3b82f6')
+        elif s >= 70:
+            colors_bar.append('#f59e0b')
+        else:
+            colors_bar.append('#ef4444')
+    
+    x_pos = range(len(subjects))
+    bars = ax.bar(x_pos, scores, color=colors_bar, edgecolor='white', linewidth=0.5)
+    
+    # Add value labels
+    for i, (bar, score) in enumerate(zip(bars, scores)):
+        if not pd.isna(score):
+            ax.text(bar.get_x() + bar.get_width()/2., bar.get_height() + 1,
+                    f'{score:.0f}', ha='center', va='bottom', fontsize=7, fontweight='bold')
+    
+    # KKM line
+    ax.axhline(y=kkm, color='red', linestyle='--', linewidth=1, label=f'KKM = {kkm}')
+    
+    ax.set_xticks(x_pos)
+    ax.set_xticklabels(subjects, rotation=45, ha='right', fontsize=7)
+    ax.set_ylim(0, 105)
+    ax.set_ylabel('Nilai', fontsize=9)
+    ax.set_title(title, fontsize=11, fontweight='bold', color='#1e3a5f')
+    ax.legend(fontsize=8, loc='upper right')
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    ax.grid(axis='y', alpha=0.3)
+    
+    plt.tight_layout()
+    
+    buf = BytesIO()
+    plt.savefig(buf, format='png', dpi=150, bbox_inches='tight', facecolor='white')
+    plt.close()
+    buf.seek(0)
+    return buf
+
+
+def create_professional_pdf(nama, nisn, subjects, scores_s1, scores_s2, 
+                            avg_s1, avg_s2, kkm, items, has_s2):
+    """PROFESSIONAL PDF REPORT - A4 PORTRAIT"""
     buffer = BytesIO()
-    doc = SimpleDocTemplate(buffer, pagesize=A4, topMargin=1.5*cm, bottomMargin=1.5*cm)
+    
+    doc = SimpleDocTemplate(
+        buffer,
+        pagesize=A4,
+        leftMargin=1.8*cm,
+        rightMargin=1.8*cm,
+        topMargin=1.2*cm,
+        bottomMargin=1.5*cm
+    )
+    
     styles = getSampleStyleSheet()
     story = []
     
-    title_style = ParagraphStyle('CustomTitle', parent=styles['Heading1'], fontSize=16, spaceAfter=20, textColor=colors.HexColor('#0f172a'), alignment=1)
-    header_style = ParagraphStyle('Header', parent=styles['Heading2'], fontSize=12, spaceAfter=10, textColor=colors.HexColor('#1e293b'))
+    # Colors
+    navy = colors.HexColor('#1e3a5f')
+    blue = colors.HexColor('#2563eb')
+    green = colors.HexColor('#10b981')
+    red = colors.HexColor('#ef4444')
+    gray = colors.HexColor('#64748b')
+    dark = colors.HexColor('#1e293b')
+    light_bg = colors.HexColor('#f8fafc')
+    white = colors.white
     
-    story.append(Paragraph("LAPORAN ANALISIS AKADEMIK SISWA", title_style))
-    story.append(Spacer(1, 0.3*inch))
-    story.append(Paragraph(f"Nama: {student_data[name_col]}", styles['Heading3']))
-    story.append(Paragraph(f"NISN: {int(student_data['NISN'])}", styles['Normal']))
-    story.append(Paragraph(f"Tanggal: {datetime.now().strftime('%d %B %Y')}", styles['Normal']))
-    story.append(Spacer(1, 0.3*inch))
+    # Styles
+    style_kop_title = ParagraphStyle(
+        'KopTitle', fontName='Helvetica-Bold', fontSize=18,
+        textColor=navy, alignment=TA_CENTER, spaceAfter=4, leading=22
+    )
+    style_kop_sub = ParagraphStyle(
+        'KopSub', fontName='Helvetica', fontSize=8,
+        textColor=gray, alignment=TA_CENTER, spaceAfter=2, leading=10
+    )
+    style_judul = ParagraphStyle(
+        'Judul', fontName='Helvetica-Bold', fontSize=14,
+        textColor=navy, alignment=TA_CENTER, spaceAfter=6, spaceBefore=10, leading=18
+    )
+    style_section = ParagraphStyle(
+        'Section', fontName='Helvetica-Bold', fontSize=11,
+        textColor=navy, spaceAfter=6, spaceBefore=10, leading=15
+    )
+    style_subsection = ParagraphStyle(
+        'SubSection', fontName='Helvetica-Bold', fontSize=9,
+        textColor=blue, spaceAfter=4, spaceBefore=6, leading=13
+    )
+    style_normal = ParagraphStyle(
+        'Normal', fontName='Helvetica', fontSize=8.5,
+        textColor=dark, leading=12, alignment=TA_JUSTIFY
+    )
+    style_small = ParagraphStyle(
+        'Small', fontName='Helvetica', fontSize=7,
+        textColor=gray, leading=9
+    )
     
-    stats_data = [
-        ['Statistik', 'Nilai', 'Kategori'],
-        ['Rata-rata', f'{avg_score:.2f}', 'ISTIMEWA' if avg_score >= 90 else 'SANGAT BAIK' if avg_score >= 85 else 'BAIK' if avg_score >= kkm else 'CUKUP' if avg_score >= 70 else 'PERLU BIMBINGAN'],
-        ['Nilai Tertinggi', f'{max_score:.0f}', ''],
-        ['Nilai Terendah', f'{min_score:.0f}', ''],
-        ['KKM', f'{kkm}', '']
+    # ===== KOP SURAT =====
+    kop_rows = [
+        [Paragraph("🧪 DAPURLAB", style_kop_title)],
+        [Paragraph("EDUCATION ANALYTICS PLATFORM", ParagraphStyle(
+            'KopSub2', fontName='Helvetica-Bold', fontSize=10,
+            textColor=blue, alignment=TA_CENTER, spaceAfter=2, leading=14))],
+        [Paragraph("Munjul-Cipayung Jakarta Timur | Telp: 085640375704 | Email: kreatif.appmobile@gmail.com", style_kop_sub)],
     ]
-    stats_table = Table(stats_data, colWidths=[4*inch, 2*inch, 3*inch])
-    stats_table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#2563eb')),
-        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+    
+    kop_table = Table(kop_rows, colWidths=[doc.width])
+    kop_table.setStyle(TableStyle([
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('TOPPADDING', (0, 0), (-1, -1), 1),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 1),
+    ]))
+    story.append(kop_table)
+    
+    # Double line separator
+    story.append(Spacer(1, 0.15*cm))
+    line_table = Table([['']], colWidths=[doc.width], rowHeights=[2])
+    line_table.setStyle(TableStyle([
+        ('LINEBELOW', (0, 0), (-1, 0), 2, blue),
+    ]))
+    story.append(line_table)
+    story.append(Spacer(1, 0.1*cm))
+    line_table2 = Table([['']], colWidths=[doc.width], rowHeights=[1])
+    line_table2.setStyle(TableStyle([
+        ('LINEBELOW', (0, 0), (-1, 0), 1, navy),
+    ]))
+    story.append(line_table2)
+    story.append(Spacer(1, 0.6*cm))
+    
+    # ===== JUDUL =====
+    story.append(Paragraph("LAPORAN HASIL ANALISIS AKADEMIK SISWA", style_judul))
+    story.append(Paragraph(
+        f"Tahun Ajaran 2025/2026 | Semester Ganjil{' & Genap' if has_s2 else ''}",
+        ParagraphStyle('SubJudul', fontName='Helvetica', fontSize=9,
+                      textColor=gray, alignment=TA_CENTER, spaceAfter=8)
+    ))
+    story.append(Spacer(1, 0.3*cm))
+    
+    # ===== IDENTITAS =====
+    story.append(Paragraph("A. IDENTITAS SISWA", style_section))
+    
+    nisn_str = str(nisn)
+    try:
+        nisn_str = str(int(float(nisn)))
+    except:
+        pass
+    
+    id_data = [
+        ['Nama Lengkap', ':', str(nama)],
+        ['NISN', ':', nisn_str],
+        ['Tanggal Laporan', ':', datetime.now().strftime('%d %B %Y')],
+        ['KKM', ':', str(kkm)],
+        ['Jumlah Mata Pelajaran', ':', str(len(subjects))],
+    ]
+    
+    id_table = Table(id_data, colWidths=[4.5*cm, 0.6*cm, 11*cm])
+    id_table.setStyle(TableStyle([
+        ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, -1), 9),
+        ('TEXTCOLOR', (0, 0), (0, -1), navy),
+        ('ALIGN', (0, 0), (0, -1), 'RIGHT'),
+        ('ALIGN', (1, 0), (1, -1), 'CENTER'),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('TOPPADDING', (0, 0), (-1, -1), 3),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
+        ('LINEBELOW', (0, 0), (-1, -1), 0.3, colors.HexColor('#e5e7eb')),
+    ]))
+    story.append(id_table)
+    story.append(Spacer(1, 0.5*cm))
+    
+    # ===== RINGKASAN =====
+    story.append(Paragraph("B. RINGKASAN AKADEMIK", style_section))
+    
+    valid_s1 = [s for s in scores_s1 if not pd.isna(s)]
+    lulus_s1 = sum(1 for s in valid_s1 if s >= kkm)
+    total_s1 = len(valid_s1)
+    max_s1 = max(valid_s1) if valid_s1 else 0
+    min_s1 = min(valid_s1) if valid_s1 else 0
+    
+    if avg_s1 >= 95: pred_s1 = "A+ (Sangat Istimewa)"
+    elif avg_s1 >= 90: pred_s1 = "A (Istimewa)"
+    elif avg_s1 >= 85: pred_s1 = "B+ (Sangat Baik)"
+    elif avg_s1 >= kkm: pred_s1 = "B (Baik)"
+    elif avg_s1 >= 70: pred_s1 = "C+ (Cukup)"
+    else: pred_s1 = "D (Perlu Perbaikan)"
+    
+    pct_s1 = f'{(lulus_s1/total_s1*100):.0f}%' if total_s1 > 0 else '0%'
+    
+    if has_s2 and scores_s2:
+        valid_s2 = [s for s in scores_s2 if s is not None and not pd.isna(s)]
+        lulus_s2 = sum(1 for s in valid_s2 if s >= kkm)
+        total_s2 = len(valid_s2)
+        max_s2 = f'{max(valid_s2):.0f}' if valid_s2 else '-'
+        min_s2 = f'{min(valid_s2):.0f}' if valid_s2 else '-'
+        avg_s2_str = f'{avg_s2:.1f}' if avg_s2 else '-'
+        pct_s2 = f'{(lulus_s2/total_s2*100):.0f}%' if total_s2 > 0 else '0%'
+        pred_s2 = "A+" if avg_s2 and avg_s2 >= 95 else "A" if avg_s2 and avg_s2 >= 90 else "B+"
+    else:
+        lulus_s2 = '-'; total_s2 = '-'; max_s2 = '-'; min_s2 = '-'
+        avg_s2_str = '-'; pct_s2 = '-'; pred_s2 = '-'
+    
+    ringkasan_data = [
+        ['Indikator', 'Semester 1', 'Semester 2'],
+        ['Rata-rata Nilai', f'{avg_s1:.1f}', avg_s2_str],
+        ['Nilai Tertinggi', f'{max_s1:.0f}', str(max_s2)],
+        ['Nilai Terendah', f'{min_s1:.0f}', str(min_s2)],
+        ['Mapel Lulus KKM', f'{lulus_s1}/{total_s1} ({pct_s1})',
+         f'{lulus_s2}/{total_s2} ({pct_s2})' if has_s2 else '-'],
+        ['Predikat Akademik', pred_s1, pred_s2],
+    ]
+    
+    ringkasan_table = Table(ringkasan_data, colWidths=[5*cm, 4.5*cm, 4.5*cm])
+    ringkasan_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), navy),
+        ('TEXTCOLOR', (0, 0), (-1, 0), white),
         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTNAME', (0, 1), (0, -1), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, -1), 9),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
         ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#cbd5e1')),
-        ('BACKGROUND', (0, 1), (-1, -1), colors.whitesmoke)
+        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [white, light_bg]),
+        ('TOPPADDING', (0, 0), (-1, -1), 6),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+        ('TEXTCOLOR', (0, 1), (0, -1), navy),
     ]))
-    story.append(stats_table)
-    story.append(Spacer(1, 0.3*inch))
+    story.append(ringkasan_table)
+    story.append(Spacer(1, 0.6*cm))
     
-    story.append(Paragraph("✅ KEKUATAN (5 Nilai Tertinggi)", header_style))
-    strengths_data = [['No', 'Mata Pelajaran', 'Nilai', 'Status']]
-    for i, (sub, score) in enumerate(strengths[:5], 1):
-        status = "✓ Lulus" if score >= kkm else "✗ Perbaikan"
-        strengths_data.append([str(i), sub, f'{score:.0f}', status])
-    strengths_table = Table(strengths_data, colWidths=[0.8*inch, 3.5*inch, 1.2*inch, 2*inch])
-    strengths_table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#10b981')),
-        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+    # ===== GRAFIK =====
+    story.append(Paragraph("C. VISUALISASI NILAI", style_section))
+    
+    try:
+        chart_buf = create_bar_chart_image(
+            [s if not pd.isna(s) else 0 for s in scores_s1],
+            subjects, kkm,
+            f'Grafik Nilai Semester 1 - {nama}'
+        )
+        chart_img = Image(chart_buf, width=doc.width * 0.9, height=4*cm)
+        story.append(chart_img)
+    except Exception as e:
+        story.append(Paragraph(f"(Grafik tidak dapat ditampilkan)", style_small))
+    
+    story.append(Spacer(1, 0.5*cm))
+    
+    # ===== HALAMAN 2 =====
+    story.append(PageBreak())
+    
+    story.append(Paragraph("DAPURLAB EDUCATION ANALYTICS", ParagraphStyle(
+        'KopHal2', fontName='Helvetica-Bold', fontSize=10,
+        textColor=navy, alignment=TA_CENTER, spaceAfter=4)))
+    story.append(Paragraph(f"Laporan: {nama} | NISN: {nisn_str}", style_small))
+    story.append(Spacer(1, 0.3*cm))
+    
+    # ===== DETAIL LENGKAP =====
+    story.append(Paragraph("D. REKAPITULASI NILAI LENGKAP", style_section))
+    
+    detail_data = [['No', 'Mata Pelajaran', 'Nilai S1', 'Nilai S2', 'Trend', 'Status', 'Grade']]
+    
+    for i, subj in enumerate(subjects):
+        s1 = scores_s1[i]
+        if pd.isna(s1):
+            continue
+        
+        s2 = scores_s2[i] if has_s2 and scores_s2 and i < len(scores_s2) else None
+        
+        if s2 is not None and not pd.isna(s2):
+            diff = s2 - s1
+            if diff > 3:
+                trend = f'▲ +{diff:.0f}'   # Naik signifikan
+            elif diff < -3:
+                trend = f'▼ {diff:.0f}'    # Turun signifikan
+            else:
+                trend = '➡️ Stabil'        # Perubahan kecil/tidak signifikan
+        else:
+            trend = '-'
+        
+        status = 'LULUS' if s1 >= kkm else 'REMIDI'
+        grade, _, _ = get_grade(s1, kkm)
+        
+        detail_data.append([
+            str(i+1), subj,
+            f'{s1:.0f}',
+            f'{s2:.0f}' if s2 is not None and not pd.isna(s2) else '-',
+            trend, status, grade
+        ])
+    
+    detail_table = Table(detail_data,
+                        colWidths=[0.7*cm, 4*cm, 1.5*cm, 1.5*cm, 1.5*cm, 2*cm, 1.5*cm],
+                        repeatRows=1)
+    
+    detail_style_cmds = [
+        ('BACKGROUND', (0, 0), (-1, 0), navy),
+        ('TEXTCOLOR', (0, 0), (-1, 0), white),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, -1), 7.5),
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-        ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#cbd5e1'))
-    ]))
-    story.append(strengths_table)
-    story.append(Spacer(1, 0.2*inch))
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('GRID', (0, 0), (-1, -1), 0.3, colors.HexColor('#cbd5e1')),
+        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [white, light_bg]),
+        ('TOPPADDING', (0, 0), (-1, -1), 4),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+    ]
     
-    story.append(Paragraph("⚠️ KELEMAHAN (5 Nilai Terendah)", header_style))
-    weaknesses_data = [['No', 'Mata Pelajaran', 'Nilai', 'Status']]
-    for i, (sub, score) in enumerate(weaknesses[-5:], 1):
-        status = "✓ Lulus" if score >= kkm else "✗ Perbaikan"
-        weaknesses_data.append([str(i), sub, f'{score:.0f}', status])
-    weaknesses_table = Table(weaknesses_data, colWidths=[0.8*inch, 3.5*inch, 1.2*inch, 2*inch])
-    weaknesses_table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#ef4444')),
-        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+    for i, row in enumerate(detail_data[1:], 1):
+        if row[5] == 'REMIDI':
+            detail_style_cmds.append(('BACKGROUND', (0, i), (-1, i), colors.HexColor('#fef2f2')))
+            detail_style_cmds.append(('TEXTCOLOR', (5, i), (5, i), red))
+    
+    detail_table.setStyle(TableStyle(detail_style_cmds))
+    story.append(detail_table)
+    story.append(Spacer(1, 0.5*cm))
+    
+    # ===== KEKUATAN =====
+    story.append(Paragraph("E. ANALISIS KEKUATAN & KELEMAHAN", style_section))
+    story.append(Paragraph("Kekuatan Akademik (5 Nilai Tertinggi Semester 1)", style_subsection))
+    
+    sorted_asc = sorted(items, key=lambda x: x['s1'], reverse=True)
+    
+    str_data = [['No', 'Mata Pelajaran', 'Nilai S1', 'Nilai S2', 'Grade', 'Catatan']]
+    for i, item in enumerate(sorted_asc[:5], 1):
+        s2_str = f'{item["s2"]:.0f}' if item['s2'] is not None and not pd.isna(item['s2']) else '-'
+        grade, _, label = get_grade(item['s1'], kkm)
+        str_data.append([str(i), item['subj'], f'{item["s1"]:.0f}', s2_str,
+                        f'{grade} ({label})', 'Pertahankan prestasi!'])
+    
+    str_table = Table(str_data, colWidths=[1*cm, 3.5*cm, 1.8*cm, 1.8*cm, 3*cm, 3*cm])
+    str_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), green),
+        ('TEXTCOLOR', (0, 0), (-1, 0), white),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, -1), 8),
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-        ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#cbd5e1'))
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('GRID', (0, 0), (-1, -1), 0.3, colors.HexColor('#cbd5e1')),
+        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [white, colors.HexColor('#f0fdf4')]),
+        ('TOPPADDING', (0, 0), (-1, -1), 4),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
     ]))
-    story.append(weaknesses_table)
-    story.append(Spacer(1, 0.3*inch))
+    story.append(str_table)
+    story.append(Spacer(1, 0.3*cm))
     
-    story.append(Paragraph("💡 REKOMENDASI BELAJAR", header_style))
-    for i, rec in enumerate(recommendations[:5], 1):
-        story.append(Paragraph(f"{i}. {rec}", styles['Normal']))
-        story.append(Spacer(1, 0.05*inch))
+    # ===== KELEMAHAN =====
+    story.append(Paragraph("Kelemahan Akademik (5 Nilai Terendah Semester 1)", style_subsection))
+    
+    sorted_desc = sorted(items, key=lambda x: x['s1'])
+    
+    weak_data = [['No', 'Mata Pelajaran', 'Nilai S1', 'Nilai S2', 'Grade', 'Rekomendasi']]
+    for i, item in enumerate(sorted_desc[:5], 1):
+        s2_str = f'{item["s2"]:.0f}' if item['s2'] is not None and not pd.isna(item['s2']) else '-'
+        grade, _, label = get_grade(item['s1'], kkm)
+        
+        subj = item['subj']
+        if "Matematika" in subj: rek = "Perbanyak latihan soal rutin"
+        elif "Bahasa" in subj and ("Arab" in subj or "Inggris" in subj): rek = "Hafalkan kosakata & praktek"
+        elif "Bahasa" in subj: rek = "Perbanyak membaca & menulis"
+        elif "IPA" in subj or "IPS" in subj or "Ilmu" in subj: rek = "Pelajari konsep dasar & praktikum"
+        elif any(w in subj for w in ["Qur'an", "Ibadah", "Fiqih", "Adab", "Aqidah", "Siroh"]): rek = "Perdalam pemahaman & diskusi"
+        elif "PJOK" in subj or "Olahraga" in subj: rek = "Tingkatkan latihan fisik"
+        elif "Seni" in subj: rek = "Perbanyak latihan & eksplorasi"
+        else: rek = "Tambah jam belajar & remedial"
+        
+        weak_data.append([str(i), subj, f'{item["s1"]:.0f}', s2_str,
+                         f'{grade} ({label})', rek])
+    
+    weak_table = Table(weak_data, colWidths=[1*cm, 3.5*cm, 1.8*cm, 1.8*cm, 3*cm, 3*cm])
+    weak_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), red),
+        ('TEXTCOLOR', (0, 0), (-1, 0), white),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, -1), 8),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('GRID', (0, 0), (-1, -1), 0.3, colors.HexColor('#cbd5e1')),
+        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [white, colors.HexColor('#fef2f2')]),
+        ('TOPPADDING', (0, 0), (-1, -1), 4),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+    ]))
+    story.append(weak_table)
+    story.append(Spacer(1, 0.6*cm))
+    
+    # ===== CATATAN =====
+    story.append(Paragraph("F. CATATAN & REKOMENDASI UNTUK ORANG TUA", style_section))
+    
+    weak_subjects_list = [item for item in items if item['s1'] < kkm]
+    
+    if weak_subjects_list:
+        story.append(Paragraph(
+            f"Berdasarkan hasil analisis, terdapat <b>{len(weak_subjects_list)} mata pelajaran</b> "
+            f"yang nilainya masih di bawah Kriteria Ketuntasan Minimal (KKM = {kkm}). "
+            f"Berikut adalah catatan dan rekomendasi untuk perbaikan:",
+            style_normal
+        ))
+        story.append(Spacer(1, 0.2*cm))
+        for i, item in enumerate(weak_subjects_list, 1):
+            story.append(Paragraph(
+                f"{i}. <b>{item['subj']}</b> (Nilai: {item['s1']:.0f}) - "
+                f"Perlu perhatian khusus. Disarankan untuk mengikuti program remedial, "
+                f"bimbingan belajar tambahan, dan pendampingan belajar di rumah.",
+                style_normal
+            ))
+    else:
+        story.append(Paragraph(
+            "Alhamdulillah, seluruh nilai mata pelajaran telah mencapai KKM. "
+            "Pertahankan prestasi yang sudah baik dan terus tingkatkan semangat belajar.",
+            style_normal
+        ))
+    
+    story.append(Spacer(1, 0.3*cm))
+    story.append(Paragraph("<b>Rekomendasi Umum:</b>", style_normal))
+    story.append(Paragraph(
+        "• Tetapkan jadwal belajar rutin di rumah (minimal 1-2 jam per hari)<br/>"
+        "• Komunikasikan perkembangan belajar dengan wali kelas secara berkala<br/>"
+        "• Libatkan siswa dalam kegiatan ekstrakurikuler untuk pengembangan minat dan bakat<br/>"
+        "• Berikan apresiasi atas setiap pencapaian untuk meningkatkan motivasi belajar",
+        style_normal
+    ))
+    
+    story.append(Spacer(1, 0.6*cm))
+    
+    # ===== TANDA TANGAN =====
+    story.append(Paragraph("_" * 60, ParagraphStyle('Line', alignment=TA_CENTER, fontSize=1)))
+    story.append(Spacer(1, 0.3*cm))
+    
+    ttd_data = [
+        ['', 'Jakarta, ' + datetime.now().strftime('%d %B %Y'), ''],
+        ['Mengetahui,', '', 'Hormat Kami,'],
+        ['Wali Kelas', '', 'Guru Kelas'],
+        ['', '', ''],
+        ['', '', ''],
+        ['', '', ''],
+        ['( ______________________ )', '', '( ______________________ )'],
+        ['NIP. ..................................', '', '............'],
+    ]
+    
+    ttd_table = Table(ttd_data, colWidths=[5*cm, 4*cm, 5*cm])
+    ttd_table.setStyle(TableStyle([
+        ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 0), (-1, -1), 9),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('TOPPADDING', (0, 0), (-1, -1), 3),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
+    ]))
+    story.append(ttd_table)
+    
+    story.append(Spacer(1, 0.5*cm))
+    
+    # Footer
+    story.append(Paragraph("_" * 60, ParagraphStyle('FooterLine', alignment=TA_CENTER, fontSize=1)))
+    story.append(Paragraph(
+        f"Dokumen ini dibuat secara otomatis oleh DapurLab Education Analytics Platform | "
+        f"© {datetime.now().year} | Laporan ini bersifat rahasia dan hanya ditujukan untuk orang tua/wali siswa.",
+        ParagraphStyle('Footer', fontName='Helvetica', fontSize=6,
+                      textColor=colors.HexColor('#94a3b8'), alignment=TA_CENTER, leading=8)
+    ))
     
     doc.build(story)
     buffer.seek(0)
     return buffer
 
-# ============ DATA SISWA (LENGKAP 28 SISWA) ============
-data = {
-    "Nama Siswa": [
-        "ABDUL HAFIDZ", "ABDULLAH HAFIZ DHIAURRAHMAN", "ABDULLAH ZAIN", "AFNAN FIRDAUS",
-        "AHMADUN AL HAQQI", "ALDRICO PASHA FATEEH NUGROHO", "ALFATIH ARSHAKA AKBAR", "BARRA KAUTSAR FIRDAUS",
-        "EMIER ARJUNA AL FATIH", "FIKRI ALVARO TAJUZZAMAN", "HAFIDZ NAUFAL ALFATHAN", "HAMMAM AZZUHRI PERMANA",
-        "IMAM MAHDI", "KHALID FATIH ALBASTIAH", "MUHAMMAD FATHAN HAISYAM", "MUHAMMAD KHALEEV AR RAYYAN KURNIAWAN",
-        "MUHAMMAD MIKEL ALASTA EMIL", "MUHAMMAD NABIL HAMZAH AL-FATTAH", "MUHAMMAD ZHAFIF MUSLIM", "NABIL ALGHAZI SETIAWAN",
-        "RAFFI ADLI SHIDQI", "RAYHAN RIZAN AL FATIH", "SA'AD ABDULLAH THOBARONY", "SABIQ SHIRATULLAH WIJAYA",
-        "TAJUNA MAZRA IBRAHIM", "TSANII MUHAMMAD KHALIFIDZIKRI", "YAHYA AMRI ABDILLAH", "YUSUF AKMAL RIFAI"
-    ],
-    "NISN": [
-        3143539590, 3150333935, 3161328188, 3157710996, 3158913526, 3157089416, 3150492070, 3154615260,
-        3161409449, 3162906560, 3159758093, 3156456673, 3164882755, 3169680431, 3152014029, 3157612630,
-        3149765954, 3159261937, 3158866436, 158718478, 133692902, 159673218, 3168078382, 158633055,
-        136408533, 3153379248, 3158669297, 3161542999
-    ],
-    "Adab dan Akhlak": [95,94,94,96,92,99,99,93,93,92,96,97,96,95,92,100,97,98,97,96,99,95,85,99,98,98,88,98],
-    "Al-Qur'an": [91,97,96,98,93,96,94,97,92,92,97,91,91,93,98,97,91,90,99,92,95,99,90,96,95,95,92,91],
-    "Aqidah": [76,76,90,93,86,88,88,79,77,80,86,79,94,94,86,93,82,77,99,80,88,89,62,95,97,95,75,92],
-    "Bahasa Arab": [88,91,95,98,94,99,94,96,85,88,91,96,99,95,99,100,92,86,100,92,100,98,84,96,96,95,86,93],
-    "Bahasa Indonesia": [80,80,80,83,81,84,89,87,83,80,83,87,91,84,82,94,87,80,93,80,91,85,80,90,89,86,80,81],
-    "Bahasa Inggris": [87,98,94,95,95,99,98,93,97,98,97,100,96,98,96,97,96,87,99,92,96,99,86,98,98,98,89,97],
-    "Fiqih": [93,95,96,100,91,98,98,98,91,92,95,96,91,96,96,99,95,92,100,93,99,98,92,99,100,96,89,92],
-    "Ilmu Pengetahuan Alam dan Sosial": [68,79,92,90,72,89,92,94,92,72,91,89,94,90,88,96,89,82,98,84,88,87,75,96,96,94,73,85],
-    "Kosa Kata Bahasa Arab": [87,97,97,100,98,100,97,97,93,96,97,94,96,96,94,99,94,84,100,95,97,99,59,100,100,97,92,98],
-    "Matematika": [65,67,90,85,86,82,92,80,78,76,88,85,80,87,78,98,73,67,97,88,75,87,88,88,97,85,70,80],
-    "Pendidikan Jasmani Olahraga dan Kesehatan": [95,93,96,93,94,95,94,96,93,93,95,94,96,95,96,95,94,95,96,95,95,95,93,94,95,97,94,94],
-    "Pendidikan Lingkungan dan Budaya Jakarta": [80,85,87,91,86,97,93,92,95,78,92,96,93,91,91,96,87,88,99,85,95,94,76,95,97,92,79,96],
-    "Pendidikan Pancasila": [79,83,84,85,84,87,94,84,89,84,90,86,82,89,89,96,92,87,94,83,91,90,84,93,95,94,87,92],
-    "Praktek Ibadah": [88,91,95,98,94,99,94,96,85,88,91,98,99,95,99,100,92,86,100,92,100,98,84,96,96,95,86,93],
-    "Seni Budaya": [93,93,96,98,93,93,96,93,94,96,96,94,96,93,97,98,95,93,97,93,95,98,93,94,96,93,93,95],
-    "Siroh": [91,87,94,99,94,100,96,100,90,91,96,85,90,93,99,99,93,85,100,96,99,95,84,100,100,98,84,94]
-}
 
-subject_columns = [
-    "Adab dan Akhlak", "Al-Qur'an", "Aqidah", "Bahasa Arab", "Bahasa Indonesia",
-    "Bahasa Inggris", "Fiqih", "Ilmu Pengetahuan Alam dan Sosial", "Kosa Kata Bahasa Arab",
-    "Matematika", "Pendidikan Jasmani Olahraga dan Kesehatan",
-    "Pendidikan Lingkungan dan Budaya Jakarta", "Pendidikan Pancasila", "Praktek Ibadah",
-    "Seni Budaya", "Siroh"
-]
-
-df_default = pd.DataFrame(data)
-
-# ============ SIDEBAR MENU ============
+# ============ SIDEBAR ============
 with st.sidebar:
-    st.markdown("### 👨‍🎓 Menu")
-    st.markdown("---")
+    st.markdown("## ⚙️ Pengaturan")
     
-    st.markdown("#### 📂 Upload Data")
-    uploaded_file_sidebar = st.file_uploader("Upload File Excel", type=["xlsx", "xls"], key="sidebar_uploader")
-    
-    st.markdown("---")
-    
-    st.markdown("#### 📊 Sumber Data")
-    use_default = st.radio("Pilih Sumber Data:", ["Data Contoh (28 Siswa)", "Upload File Excel"], index=0)
+    with st.expander("🎯 KKM (Kriteria Ketuntasan Minimal)"):
+        kkm = st.number_input("Nilai KKM", 0, 100, 80)
     
     st.markdown("---")
-    st.info(f"🎯 **KKM: 80**")
-    st.markdown("---")
-    st.caption("📱 EduAnalytics Mobile v3.0")
-    st.caption("© 2024 All Rights Reserved")
-
-# ============ MOBILE UPLOAD SECTION (TAMPAK DI HP) ============
-# Ini adalah bagian yang akan tampil di mobile
-st.markdown("""
-<div class="mobile-upload-section">
-    <div class="mobile-upload-card">
-        <div class="mobile-upload-title">
-            📂 <span style="color:#0f172a;">Upload Data Excel</span>
-        </div>
-""", unsafe_allow_html=True)
-
-uploaded_file_mobile = st.file_uploader("Pilih file Excel", type=["xlsx", "xls"], key="mobile_uploader", label_visibility="collapsed")
-
-st.markdown("""
-    </div>
-</div>
-""", unsafe_allow_html=True)
-
-# ============ DETEKSI FILE UPLOAD ============
-# Prioritaskan upload dari mobile dulu, lalu sidebar
-uploaded_file = uploaded_file_mobile if uploaded_file_mobile is not None else uploaded_file_sidebar
-
-# ============ LOAD DATA ============
-if uploaded_file is not None and use_default == "Upload File Excel":
-    try:
-        df = pd.read_excel(uploaded_file, engine='openpyxl')
-        df = clean_dataframe(df)
-        if 'Nama Siswa' in df.columns:
-            name_col = 'Nama Siswa'
-        else:
-            name_col = df.columns[0]
-        subject_cols = []
-        for col in df.columns:
-            if col not in [name_col, 'NISN'] and pd.api.types.is_numeric_dtype(df[col]):
-                subject_cols.append(col)
-        st.success("✅ Data berhasil dimuat!")
-    except Exception as e:
-        st.error(f"Error: {e}")
-        st.info("Menggunakan data contoh...")
-        df = df_default.copy()
-        name_col = 'Nama Siswa'
-        subject_cols = subject_columns
-else:
-    df = df_default.copy()
-    name_col = 'Nama Siswa'
-    subject_cols = subject_columns
-    if use_default == "Data Contoh (28 Siswa)":
-        st.info("📚 Menggunakan data contoh (28 siswa)")
-
-# ============ SUB HEADER ============
-st.markdown(f"""
-<div style="background: #f8fafc; padding: 10px 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #e2e8f0;">
-    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
-        <div style="font-weight: 600; color: #0f172a;">🎯 Dashboard Akademik</div>
-        <div style="background: #2563eb; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.7rem;">Semester Ganjil 2024/2025</div>
-    </div>
-</div>
-""", unsafe_allow_html=True)
-
-# ============ MAIN CONTENT ============
-if df is not None and len(subject_cols) > 0:
-    
-    KKM = 80
-    
-    # Student Selection
-    st.markdown("### 🎓 Pilih Siswa")
-    selected_student = st.selectbox("", df[name_col].unique(), label_visibility="collapsed")
-    
-    student_data = df[df[name_col] == selected_student].iloc[0]
-    scores = [student_data[subject] for subject in subject_cols]
-    avg_score = np.mean(scores)
-    max_score = max(scores)
-    min_score = min(scores)
-    grade_info, chip_class, grade_color = get_grade_info(avg_score, KKM)
-    
-    # ============ PREMIUM SALDO CARD ============
-    st.markdown(f"""
-    <div class="premium-card">
-        <div class="saldo-label">🏆 RATA-RATA NILAI AKADEMIK</div>
-        <div class="saldo-nilai">{avg_score:.1f} <span style="font-size: 0.9rem;">/ 100</span></div>
-        <div style="display: flex; justify-content: space-between; margin-top: 12px; flex-wrap: wrap; gap: 10px;">
-            <div>
-                <div class="saldo-label">Nilai Tertinggi</div>
-                <div style="font-size: 1.1rem; font-weight: 700;">{max_score:.0f}</div>
-            </div>
-            <div>
-                <div class="saldo-label">Nilai Terendah</div>
-                <div style="font-size: 1.1rem; font-weight: 700;">{min_score:.0f}</div>
-            </div>
-            <div>
-                <div class="saldo-label">KKM</div>
-                <div style="font-size: 1.1rem; font-weight: 700;">{KKM}</div>
-            </div>
-            <div>
-                <div class="saldo-label">Kategori</div>
-                <div style="font-size: 0.9rem; font-weight: 600;">{grade_info.split(' ')[0]}</div>
-            </div>
-        </div>
+    st.markdown("## 📥 Template Excel")
+    st.markdown("""
+    <div style="background:#eff6ff; padding:12px; border-radius:8px; font-size:0.85rem;">
+    <b>Format fleksibel:</b><br>
+    • Kolom A: NISN<br>
+    • Kolom B: Nama Siswa<br>
+    • Kolom C+: Mapel (bebas)<br>
+    <b>Mapel TIDAK TERBATAS!</b>
     </div>
     """, unsafe_allow_html=True)
     
-    # ============ INFO RINGKASAN ============
-    st.markdown("### 📊 Ringkasan Akademik")
+    st.download_button(
+        "📥 Download Template Excel",
+        create_template_excel(),
+        "Template_Nilai_DapurLab.xlsx",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        use_container_width=True
+    )
     
-    col1, col2, col3, col4 = st.columns(4)
+    st.markdown("---")
+    st.markdown("## 📤 Upload Data")
+    uploaded_file = st.file_uploader("Pilih file Excel", type=["xlsx", "xls"])
     
-    total_mapel = len(subject_cols)
-    lulus = sum(1 for s in scores if s >= KKM)
-    perlu_bimbingan = sum(1 for s in scores if s < 70)
-    istimewa = sum(1 for s in scores if s >= 90)
+    if uploaded_file:
+        st.success("✅ File siap!")
     
+    st.markdown("---")
+    st.caption("© 2024 DapurLab | v6.0 Professional")
+
+
+# ============ HEADER ============
+st.markdown("""
+<div class="main-header">
+    <h1>🧪 DapurLab Analytics</h1>
+    <p>Platform Analisis Kekuatan & Kelemahan Siswa • Laporan ke Orang Tua • Professional Grade</p>
+</div>
+""", unsafe_allow_html=True)
+
+
+# ============ MAIN CONTENT ============
+if uploaded_file is None:
+    st.markdown("## 👋 Selamat Datang!")
+    st.markdown("""
+    <div style="background:#f8fafc; padding:30px; border-radius:15px; text-align:center; margin:20px 0;">
+        <div style="font-size:4rem;">🧪</div>
+        <h3>Platform Analisis Nilai Siswa Profesional</h3>
+        <p style="color:#64748b;">Upload file Excel untuk memulai analisis lengkap</p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    col1, col2, col3 = st.columns(3)
     with col1:
-        st.metric("📚 Total Mapel", total_mapel)
+        st.markdown("""
+        <div style="background:white; padding:25px; border-radius:12px; border:1px solid #e5e7eb; text-align:center;">
+            <div style="font-size:2rem;">1️⃣</div>
+            <h4>Download Template</h4>
+            <p style="font-size:0.9rem; color:#64748b;">Format fleksibel, mapel tidak terbatas</p>
+        </div>
+        """, unsafe_allow_html=True)
     with col2:
-        st.metric(f"✅ Lulus (≥{KKM})", f"{lulus} / {total_mapel}")
+        st.markdown("""
+        <div style="background:white; padding:25px; border-radius:12px; border:1px solid #e5e7eb; text-align:center;">
+            <div style="font-size:2rem;">2️⃣</div>
+            <h4>Isi Data Nilai</h4>
+            <p style="font-size:0.9rem; color:#64748b;">Isi NISN, Nama, dan nilai per mapel</p>
+        </div>
+        """, unsafe_allow_html=True)
     with col3:
-        st.metric("⚠️ Perlu Bimbingan", f"{perlu_bimbingan} / {total_mapel}")
-    with col4:
-        st.metric("🏆 Istimewa (≥90)", f"{istimewa} / {total_mapel}")
-    
-    # ============ KEKUATAN & KELEMAHAN ============
-    subject_scores = {subject: student_data[subject] for subject in subject_cols}
-    sorted_subjects = sorted(subject_scores.items(), key=lambda x: x[1], reverse=True)
-    strengths = sorted_subjects[:5]
-    weaknesses = sorted_subjects[-5:]
-    
-    col_str, col_weak = st.columns(2)
-    
-    with col_str:
-        st.markdown("### ✅ TOP 5 KEKUATAN")
-        for subject, score in strengths:
-            grade, chip, _ = get_grade_info(score, KKM)
-            st.markdown(f"""
-            <div class="premium-progress">
-                <div class="progress-label">
-                    <span><strong>{subject}</strong></span>
-                    <span class="score-chip {chip}">{score:.0f} | {grade.split(' ')[0]}</span>
-                </div>
-                <div class="progress-bar-bg">
-                    <div class="progress-bar-fill" style="width: {score}%;"></div>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-    
-    with col_weak:
-        st.markdown("### ⚠️ TOP 5 KELEMAHAN")
-        for subject, score in weaknesses:
-            grade, chip, _ = get_grade_info(score, KKM)
-            bar_color = "linear-gradient(90deg, #ef4444, #dc2626)" if score < KKM else "linear-gradient(90deg, #f59e0b, #d97706)"
-            st.markdown(f"""
-            <div class="premium-progress">
-                <div class="progress-label">
-                    <span><strong>{subject}</strong></span>
-                    <span class="score-chip {chip}">{score:.0f} | {grade.split(' ')[0]}</span>
-                </div>
-                <div class="progress-bar-bg">
-                    <div class="progress-bar-fill" style="width: {score}%; background: {bar_color};"></div>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-    
-    # ============ VISUALISASI INTERAKTIF ============
-    st.markdown("---")
-    st.markdown("### 📈 Visualisasi Interaktif")
-    
-    tab1, tab2, tab3 = st.tabs(["📊 Bar Chart", "🎯 Radar Chart", "📊 Gauge Meter"])
-    
-    with tab1:
-        fig = go.Figure()
-        colors_bar = ['#10b981' if s >= KKM else '#f59e0b' if s >= 60 else '#ef4444' for s in scores]
-        fig.add_trace(go.Bar(
-            x=subject_cols,
-            y=scores,
-            marker_color=colors_bar,
-            text=scores,
-            textposition='auto',
-            textfont=dict(color='white', size=9),
-            hovertemplate='<b>%{x}</b><br>Nilai: %{y}<extra></extra>'
-        ))
-        fig.add_hline(y=KKM, line_dash="dash", line_color="#ef4444", line_width=2, 
-                     annotation_text=f"KKM ({KKM})", annotation_font_color="#ef4444", annotation_font_size=10)
-        fig.update_layout(
-            title=dict(text=f"Analisis Nilai {selected_student}", font=dict(color='#0f172a', size=14)),
-            xaxis_title="Mata Pelajaran",
-            yaxis_title="Nilai",
-            height=400,
-            template='plotly_white',
-            paper_bgcolor='white',
-            plot_bgcolor='white',
-            font=dict(color='#0f172a'),
-            xaxis={'tickangle': -45, 'tickfont': dict(color='#0f172a', size=8)},
-            yaxis={'tickfont': dict(color='#0f172a'), 'gridcolor': '#e2e8f0', 'range': [0, 100]}
-        )
-        st.plotly_chart(fig, use_container_width=True)
-    
-    with tab2:
-        radar_fig = create_radar_chart(scores, subject_cols, selected_student, KKM)
-        st.plotly_chart(radar_fig, use_container_width=True)
-    
-    with tab3:
-        col_g1, col_g2, col_g3 = st.columns(3)
-        with col_g1:
-            gauge1 = create_gauge_chart(avg_score, "Rata-rata", "#2563eb", KKM)
-            st.plotly_chart(gauge1, use_container_width=True)
-        with col_g2:
-            gauge2 = create_gauge_chart(max_score, "Tertinggi", "#10b981", KKM)
-            st.plotly_chart(gauge2, use_container_width=True)
-        with col_g3:
-            gauge3 = create_gauge_chart(min_score, "Terendah", "#ef4444", KKM)
-            st.plotly_chart(gauge3, use_container_width=True)
-    
-    # ============ REKOMENDASI ============
-    st.markdown("---")
-    st.markdown("### 💡 Rekomendasi Belajar")
-    
-    weak_subjects_list = [(sub, score) for sub, score in subject_scores.items() if score < KKM]
-    recommendations = []
-    
-    if weak_subjects_list:
-        for subject, score in weak_subjects_list[:5]:
-            if "Matematika" in subject:
-                rec = f"{subject} (Nilai: {score:.0f}) - Perbanyak latihan soal"
-            elif "Bahasa" in subject:
-                rec = f"{subject} (Nilai: {score:.0f}) - Tingkatkan kosakata"
-            elif "Ilmu Pengetahuan" in subject:
-                rec = f"{subject} (Nilai: {score:.0f}) - Pelajari ulang konsep"
-            else:
-                rec = f"{subject} (Nilai: {score:.0f}) - Tambah jam belajar"
-            recommendations.append(rec)
-            st.warning(f"📚 {rec}")
-    else:
-        recommendations.append("Pertahankan prestasi yang sudah baik!")
-        st.success("🎉 **SELAMAT!** Semua nilai di atas KKM!")
-    
-    # ============ PRESTASI ============
-    if istimewa > 0:
-        st.markdown("#### 🏆 Prestasi Akademik")
-        for subject, score in strengths[:3]:
-            if score >= 90:
-                st.info(f"🌟 **{subject}** (Nilai: {score:.0f}) - Pertahankan!")
-    
-    # ============ DOWNLOAD PDF ============
-    st.markdown("---")
-    st.markdown("### 📄 Export Laporan")
-    
-    col_btn1, col_btn2, col_btn3 = st.columns([1, 2, 1])
-    with col_btn2:
-        if st.button("📑 Download Laporan PDF", use_container_width=True):
-            with st.spinner("Membuat laporan PDF..."):
-                pdf_buffer = create_pdf_report(
-                    student_data, name_col, subject_cols, scores, 
-                    avg_score, max_score, min_score, 
-                    strengths, weaknesses, recommendations, KKM
-                )
-                b64 = base64.b64encode(pdf_buffer.getvalue()).decode()
-                href = f'<a href="data:application/pdf;base64,{b64}" download="Laporan_{selected_student.replace(" ", "_")}.pdf" style="text-decoration: none;"><div style="background: linear-gradient(135deg, #10b981, #059669); color: white; text-align: center; padding: 10px; border-radius: 12px; font-weight: 600;">✅ Download PDF</div></a>'
-                st.markdown(href, unsafe_allow_html=True)
-                st.balloons()
-                st.success("✅ Laporan PDF siap!")
+        st.markdown("""
+        <div style="background:white; padding:25px; border-radius:12px; border:1px solid #e5e7eb; text-align:center;">
+            <div style="font-size:2rem;">3️⃣</div>
+            <h4>Upload & Analisis</h4>
+            <p style="font-size:0.9rem; color:#64748b;">Download laporan PDF profesional</p>
+        </div>
+        """, unsafe_allow_html=True)
 
 else:
-    st.error("Tidak ditemukan data nilai yang valid")
+    try:
+        xl = pd.ExcelFile(uploaded_file)
+        sheet_names = xl.sheet_names
+        
+        df_s1 = pd.read_excel(uploaded_file, sheet_name='SEMESTER_1' if 'SEMESTER_1' in sheet_names else 0)
+        df_s2 = pd.read_excel(uploaded_file, sheet_name='SEMESTER_2') if 'SEMESTER_2' in sheet_names else None
+        
+        df_s1, name_col = clean_dataframe(df_s1)
+        if df_s2 is not None:
+            df_s2, _ = clean_dataframe(df_s2)
+        
+        subjects = detect_subjects(df_s1)
+        has_s2 = df_s2 is not None and len(df_s2) > 0
+        
+        if not subjects:
+            st.error("❌ Tidak ada kolom mapel terdeteksi!")
+            st.stop()
+        
+        st.success(f"✅ **{len(df_s1)} siswa** | **{len(subjects)} mapel** | S2: {'✅ Tersedia' if has_s2 else '❌ Tidak'}")
+        
+        # Pilih Siswa
+        st.markdown("## 👨‍🎓 Pilih Siswa")
+        col_s1, col_s2 = st.columns([1, 2])
+        with col_s1:
+            search = st.text_input("🔍 Cari:", placeholder="Ketik nama...")
+        names = df_s1[name_col].dropna().unique()
+        if search:
+            names = [n for n in names if search.lower() in str(n).lower()]
+        if len(names) == 0:
+            st.warning("Tidak ditemukan.")
+            st.stop()
+        with col_s2:
+            selected = st.selectbox("Nama Siswa:", names, label_visibility="collapsed")
+        
+        # Get data
+        student = df_s1[df_s1[name_col] == selected].iloc[0]
+        nisn_val = student.get('NISN', student.get('NIS', student.iloc[0]))
+        
+        scores_s1 = []
+        for subj in subjects:
+            val = student.get(subj, np.nan)
+            scores_s1.append(float(val) if pd.notna(val) else np.nan)
+        
+        valid_s1 = [s for s in scores_s1 if not pd.isna(s)]
+        avg_s1 = np.mean(valid_s1) if valid_s1 else 0
+        
+        scores_s2 = None
+        avg_s2 = None
+        if has_s2 and selected in df_s2[name_col].values:
+            student_s2 = df_s2[df_s2[name_col] == selected].iloc[0]
+            scores_s2 = []
+            for subj in subjects:
+                if subj in df_s2.columns:
+                    val = student_s2.get(subj, np.nan)
+                    scores_s2.append(float(val) if pd.notna(val) else np.nan)
+                else:
+                    scores_s2.append(np.nan)
+            valid_s2 = [s for s in scores_s2 if not pd.isna(s)]
+            avg_s2 = np.mean(valid_s2) if valid_s2 else None
+        
+        # Build items
+        items = []
+        for i, subj in enumerate(subjects):
+            s1 = scores_s1[i]
+            if pd.isna(s1): continue
+            s2 = scores_s2[i] if scores_s2 else None
+            items.append({'subj': subj, 's1': s1, 's2': s2})
+        
+        # Stats Cards
+        st.markdown("## 📊 Ringkasan Akademik")
+        c1, c2, c3, c4 = st.columns(4)
+        grade, badge, label = get_grade(avg_s1, kkm)
+        
+        with c1:
+            st.markdown(f"""
+            <div class="stat-card primary">
+                <div class="stat-label">Rata-rata S1</div>
+                <div class="stat-value">{avg_s1:.1f}</div>
+                <span class="badge {badge}">{grade} - {label}</span>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        with c2:
+            if avg_s2 is not None:
+                grade2, badge2, label2 = get_grade(avg_s2, kkm)
+                diff = avg_s2 - avg_s1
+                trend = "📈" if diff > 3 else "📉" if diff < -3 else "➡️"
+                st.markdown(f"""
+                <div class="stat-card success">
+                    <div class="stat-label">Rata-rata S2</div>
+                    <div class="stat-value">{avg_s2:.1f}</div>
+                    <span>{trend} {diff:+.1f} | {grade2}</span>
+                </div>
+                """, unsafe_allow_html=True)
+            else:
+                st.markdown("""
+                <div class="stat-card" style="background:#f8fafc;">
+                    <div class="stat-label">Semester 2</div>
+                    <div class="stat-value" style="color:#94a3b8;">-</div>
+                </div>
+                """, unsafe_allow_html=True)
+        
+        with c3:
+            max_val = max(valid_s1)
+            max_subj = subjects[scores_s1.index(max_val)]
+            st.markdown(f"""
+            <div class="stat-card" style="border-left:4px solid #10b981;">
+                <div class="stat-label">Nilai Tertinggi</div>
+                <div class="stat-value" style="color:#1e293b;">{max_val:.0f}</div>
+                <span style="font-size:0.85rem;">{max_subj}</span>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        with c4:
+            min_val = min(valid_s1)
+            min_subj = subjects[scores_s1.index(min_val)]
+            icon = "⚠️" if min_val < kkm else "✅"
+            st.markdown(f"""
+            <div class="stat-card" style="border-left:4px solid {'#ef4444' if min_val < kkm else '#10b981'};">
+                <div class="stat-label">Nilai Terendah</div>
+                <div class="stat-value" style="color:#1e293b;">{min_val:.0f} {icon}</div>
+                <span style="font-size:0.85rem;">{min_subj}</span>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        # Status
+        lulus = sum(1 for s in valid_s1 if s >= kkm)
+        cols = st.columns(4)
+        cols[0].metric("✅ Lulus", f"{lulus}/{len(valid_s1)}")
+        cols[1].metric("⚠️ Remidi", f"{len(valid_s1)-lulus}")
+        cols[2].metric("🌟 Istimewa", f"{sum(1 for s in valid_s1 if s>=90)}")
+        cols[3].metric("📊 %", f"{(lulus/len(valid_s1)*100):.0f}%")
+        
+        # Detail
+        st.markdown("## 📋 Detail Nilai")
+        col_f1, col_f2 = st.columns(2)
+        with col_f1:
+            status_filter = st.multiselect("Filter:", ["Lulus", "Remidi", "Istimewa"],
+                                          default=["Lulus", "Remidi", "Istimewa"])
+        with col_f2:
+            sort_by = st.selectbox("Urutkan:", ["Nilai Tertinggi", "Nilai Terendah", "Abjad"])
+        
+        filtered_items = []
+        for item in items:
+            if item['s1'] >= 90: status = "Istimewa"
+            elif item['s1'] >= kkm: status = "Lulus"
+            else: status = "Remidi"
+            if status in status_filter:
+                item['status'] = status
+                filtered_items.append(item)
+        
+        if sort_by == "Nilai Tertinggi":
+            filtered_items.sort(key=lambda x: x['s1'], reverse=True)
+        elif sort_by == "Nilai Terendah":
+            filtered_items.sort(key=lambda x: x['s1'])
+        else:
+            filtered_items.sort(key=lambda x: x['subj'])
+        
+        for item in filtered_items:
+            if item['s1'] >= 90: bar_color = "#10b981"
+            elif item['s1'] >= kkm: bar_color = "#3b82f6"
+            elif item['s1'] >= 70: bar_color = "#f59e0b"
+            else: bar_color = "#ef4444"
+            
+            s2_display = ""
+            trend_html = ""
+            if item['s2'] is not None and not pd.isna(item['s2']):
+                diff = item['s2'] - item['s1']
+                trend_icon = "📈" if diff > 3 else "📉" if diff < -3 else "➡️"
+                trend_class = "trend-up" if diff > 3 else "trend-down" if diff < -3 else "trend-stable"
+                s2_display = f'<span style="margin-left:10px;font-size:0.85rem;">S2: <b>{item["s2"]:.0f}</b></span>'
+                trend_html = f'<span class="{trend_class}">{trend_icon} {diff:+.0f}</span>'
+            
+            grade, badge, _ = get_grade(item['s1'], kkm)
+            
+            st.markdown(f"""
+            <div class="subject-row">
+                <div class="subject-name">{item['subj']}</div>
+                <div class="subject-scores">
+                    <div class="subject-score" style="color:{bar_color}">S1: {item['s1']:.0f}</div>
+                    {s2_display} {trend_html}
+                </div>
+                <div class="subject-bar">
+                    <div class="subject-bar-fill" style="width:{item['s1']}%;background:{bar_color};"></div>
+                </div>
+                <span class="badge {badge}">{grade}</span>
+                <span style="font-size:0.75rem;">{item['status']}</span>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        # Visualisasi
+        st.markdown("## 📈 Visualisasi")
+        tab1, tab2 = st.tabs(["📊 Bar Chart", "🎯 Radar Chart"])
+        
+        valid_idx = [i for i, s in enumerate(scores_s1) if not pd.isna(s)]
+        plot_subjects = [subjects[i] for i in valid_idx]
+        plot_s1 = [scores_s1[i] for i in valid_idx]
+        
+        with tab1:
+            colors_bar = ['#10b981' if s >= 90 else '#3b82f6' if s >= kkm else '#f59e0b' if s >= 70 else '#ef4444' for s in plot_s1]
+            fig = go.Figure()
+            fig.add_trace(go.Bar(x=plot_subjects, y=plot_s1, marker_color=colors_bar, name='S1',
+                                text=[f'{s:.0f}' for s in plot_s1], textposition='outside'))
+            if scores_s2:
+                plot_s2 = [scores_s2[i] for i in valid_idx]
+                fig.add_trace(go.Bar(x=plot_subjects, y=plot_s2, marker_color='rgba(16,185,129,0.7)', name='S2'))
+            fig.add_hline(y=kkm, line_dash="dash", line_color="red", annotation_text=f"KKM={kkm}")
+            fig.update_layout(height=500, template='plotly_white', xaxis_tickangle=-45, yaxis=dict(range=[0,105]))
+            st.plotly_chart(fig, use_container_width=True)
+        
+        with tab2:
+            fig = go.Figure()
+            fig.add_trace(go.Scatterpolar(r=plot_s1, theta=plot_subjects, fill='toself', name='S1', line_color='#3b82f6'))
+            if scores_s2:
+                fig.add_trace(go.Scatterpolar(r=[scores_s2[i] for i in valid_idx], theta=plot_subjects, fill='toself', name='S2', line_color='#10b981'))
+            fig.update_layout(polar=dict(radialaxis=dict(range=[0,100])), height=500)
+            st.plotly_chart(fig, use_container_width=True)
+        
+        # Download PDF
+        st.markdown("## 📄 Download Laporan PDF Profesional")
+        st.markdown("""
+        <div style="background:#eff6ff; padding:15px; border-radius:10px; margin-bottom:15px;">
+            <b>📋 Isi Laporan:</b> Kop Surat • Identitas • Ringkasan • Grafik • 
+            Rekapitulasi Lengkap • Kekuatan & Kelemahan • Catatan Orang Tua • Tanda Tangan
+        </div>
+        """, unsafe_allow_html=True)
+        
+        if st.button("📑 Buat Laporan PDF Profesional", use_container_width=True, type="primary"):
+            try:
+                with st.spinner("📄 Membuat laporan profesional..."):
+                    pdf_buffer = create_professional_pdf(
+                        selected, nisn_val, subjects, scores_s1, scores_s2,
+                        avg_s1, avg_s2, kkm, filtered_items, has_s2
+                    )
+                    b64 = base64.b64encode(pdf_buffer.getvalue()).decode()
+                    
+                    st.markdown(f"""
+                    <div style="text-align:center;padding:20px;background:#f0fdf4;border-radius:12px;border:2px dashed #10b981;margin-top:15px;">
+                        <p style="color:#166534;font-weight:700;font-size:1.1rem;">✅ Laporan Profesional Siap!</p>
+                        <a href="data:application/pdf;base64,{b64}" 
+                           download="Laporan_Akademik_{str(selected).replace(' ','_')}.pdf"
+                           style="text-decoration:none;">
+                            <button style="background:#10b981;color:white;border:none;padding:12px 35px;
+                                           border-radius:10px;font-size:1rem;cursor:pointer;font-weight:700;
+                                           margin-top:10px;">
+                                📥 Download Laporan PDF
+                            </button>
+                        </a>
+                    </div>
+                    """, unsafe_allow_html=True)
+                    st.balloons()
+            except Exception as e:
+                st.error(f"❌ Error: {str(e)}")
+                import traceback
+                st.code(traceback.format_exc())
+    
+    except Exception as e:
+        st.error(f"❌ Error: {str(e)}")
+        import traceback
+        st.code(traceback.format_exc())
